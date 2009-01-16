@@ -10,6 +10,8 @@ Known Issues
 
 Change Log
 ----------
+0.81	TBA		Better error for missing DBML file
+			Tidy-up of comments and formatting in L2ST4.ttinclude
 0.80	09-Jan-2009	Licensed under the Microsoft Public License (MsPL)
 			IsComposable function support
 0.79	11-Dec-2008	Associations managing the relationship fk's now actually do <blush>

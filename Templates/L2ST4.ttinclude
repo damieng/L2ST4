@@ -8,13 +8,20 @@
 #><#@ import namespace="System.Collections.Generic"
 #><#@ import namespace="System.Data.Linq"
 #><#@ import namespace="System.Data.Linq.Mapping"
+#><#@ import namespace="System.IO"
 #><#@ import namespace="System.Linq"
 #><#@ import namespace="System.Reflection"
 #><#@ import namespace="System.Xml.Linq"
-#><#+ // Lightweight DBML wrapper and helper classes v0.79
+#><#+
+// L2ST4 - LINQ to SQL templates for T4 v0.81 - http://www.codeplex.com/l2st4
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+// This source code is made available under the terms of the Microsoft Public License (MS-PL)
+
 enum SerializationMode { None, Unidirectional, DataContractSP1 };
 
-class Data { // Database -> DataContext
+// DBML Database element > code DataContext class
+class Data
+{
 	public XNamespace NS = "http://schemas.microsoft.com/linqtosql/dbml/2007";
 	public List<TableClass> TableClasses { get; private set; }
 	public String BaseClassName { get; private set; }
@@ -23,6 +30,7 @@ class Data { // Database -> DataContext
 	public String ContextName { get; private set; }
 	public String ContextNamespace { get; private set; }
 	public String DatabaseName { get; private set; }
+	public String DbmlFileName { get; private set; }
 	public String EntityNamespace { get; private set; }
 	public List<Function> Functions { get; private set; }
 	public List<FunctionClass> FunctionClasses { get; private set; }
@@ -31,10 +39,13 @@ class Data { // Database -> DataContext
 	public List<Table> Tables { get; private set; }
 	
 	public Data(String dbmlFileName) {
-		var dbml = XDocument.Load(dbmlFileName);
+		DbmlFileName = dbmlFileName;
+		if (!File.Exists(DbmlFileName))
+			throw new Exception(String.Format("DBML file '{0}' could not be found.", DbmlFileName));
+		XElement xe = XDocument.Load(DbmlFileName).Root;
 		TableClasses = new List<TableClass>();
 		FunctionClasses = new List<FunctionClass>();
-		XElement xe = dbml.Root;
+		
 		foreach(XElement connection in xe.Elements(NS + "Connection")) {
 			ConnectSettingsObject = (String) connection.Attribute("SettingsObjectName");
 			ConnectSettingsProperty = (String) connection.Attribute("SettingsPropertyName");
@@ -46,11 +57,13 @@ class Data { // Database -> DataContext
 		EntityNamespace = (String) xe.Attribute("EntityNamespace");
 		Serialization = Util.ParseEnum((String) xe.Attribute("Serialization"), SerializationMode.None);
 		TypeAttributes = Class.DecodeAccess((String) xe.Attribute("AccessModifier")) | Class.DecodeModifier((String) xe.Attribute("Modifier"));
-		Tables = (from t in xe.Elements(NS + "Table") select new Table(this, t)).ToList();
-		Functions = (from f in xe.Elements(NS + "Function") select new Function(this, f)).ToList();
+		Tables = (from t in xe.Elements(NS + "Table")
+			select new Table(this, t)).ToList();
+		Functions = (from f in xe.Elements(NS + "Function")
+			select new Function(this, f)).ToList();
 	}
 	
-	static internal Type GetType(string typeName, bool canBeNull) {
+	static internal Type GetType(String typeName, bool canBeNull) {
 		Type type = null;
 		switch(typeName) {
 			case "System.Xml.Linq.XElement": type = typeof(System.Xml.Linq.XElement); break;
@@ -65,7 +78,9 @@ class Data { // Database -> DataContext
 	}
 }
 
-class Table { // Table -> Properties & events on DataContext
+// DBML Table element > Base entity class, events & property on DataContext class
+class Table
+{
 	public TableClass BaseClass {
 		get { return Classes.First(); }
 	}
@@ -85,14 +100,18 @@ class Table { // Table -> Properties & events on DataContext
 		Data = data;
 		Name = (String) xe.Attribute("Name");
 		Member = (String) xe.Attribute("Member");
-		Data.TableClasses.AddRange(from c in xe.Elements(Data.NS + "Type") select new TableClass(this, c));
+		Data.TableClasses.AddRange(from c in xe.Elements(Data.NS + "Type")
+			select new TableClass(this, c));
 		Operations = new List<TableOperation>();
 		foreach(OperationType operationType in Enum.GetValues(typeof(OperationType)))
-			Operations.AddRange((from o in xe.Elements(Data.NS + operationType.ToString() + "Function") select new TableOperation(this, o)).ToList());
+			Operations.AddRange((from o in xe.Elements(Data.NS + operationType.ToString() + "Function")
+				select new TableOperation(this, o)).ToList());
 	}
 }
 
-class Class { // Base type element -> Type/ElementType
+// DBML Type element > Entity class, subclasses or stored procedure return type
+class Class
+{
 	public Class SuperClass { get; protected set; }
 	public List<Column> Columns { get; private set; }
 	public Data Data {get; private set; }
@@ -124,7 +143,7 @@ class Class { // Base type element -> Type/ElementType
 			select new Column(this, c)).ToList();
 	}
 	
-	internal static TypeAttributes DecodeAccess(string access) {
+	internal static TypeAttributes DecodeAccess(String access) {
 		switch(access) {
 			case "Private": return TypeAttributes.NestedPrivate;
 			case "Internal": return TypeAttributes.NestedAssembly;
@@ -134,7 +153,7 @@ class Class { // Base type element -> Type/ElementType
 		}
 	}
 	
-	internal static TypeAttributes DecodeModifier(string modifier) {
+	internal static TypeAttributes DecodeModifier(String modifier) {
 		switch(modifier) {
 			case "Abstract": return TypeAttributes.Abstract;
 			case "Sealed": return TypeAttributes.Sealed;
@@ -143,12 +162,14 @@ class Class { // Base type element -> Type/ElementType
 	}
 }
 
-class TableClass : Class { // Classes representing table-mapped entities
+// DBML Type element > Classes and subclasses that map to tables
+class TableClass : Class
+{
 	public List<Association> Associations { get; private set; }
 	public Boolean HasPrimaryKey {
 		get { return Columns.Any(c => c.IsPrimaryKey); }
 	}
-	public override string Name { get; set; }
+	public override String Name { get; set; }
 	public IList<Column> PrimaryKey {
 		get { return Columns.Where(c => c.IsPrimaryKey).ToList(); }
 	}
@@ -173,7 +194,9 @@ class TableClass : Class { // Classes representing table-mapped entities
 	}
 }
 
-class FunctionClass : Class { // Classes autogenerated for functions
+// DBML Type > Classes that map to stored procedure return types
+class FunctionClass : Class
+{
 	public Function Function { get; set; }
 	
 	public FunctionClass(Function function, XElement xe) : base(function.Data, xe) {
@@ -181,7 +204,9 @@ class FunctionClass : Class { // Classes autogenerated for functions
 	}
 }
 
-class Column { // Column -> Property
+// DBML type Column > Properties on a class
+class Column
+{
 	private String member, typeName, storage;
 
 	public AutoSync AutoSync { get; private set; }
@@ -243,7 +268,9 @@ class Column { // Column -> Property
 	}
 }
 
-class Association { // Foreign key/association -> EntitySet/EntityRef
+// DBML Association element > EntitySet or EntityRef between two table-mapped classes
+class Association
+{
 	private TableClass thisClass;
 	private String typeName, storage;
 
@@ -290,11 +317,13 @@ class Association { // Foreign key/association -> EntitySet/EntityRef
 	public Association(TableClass thisClass, XElement xe) {
 		this.thisClass = thisClass;
 		typeName = (String) xe.Attribute("Type");
-		string thisKey = ((String) xe.Attribute("ThisKey"));
-		if (thisKey != null) thisKeyMembers = thisKey.Split(',');
+		String thisKey = ((String) xe.Attribute("ThisKey"));
+		if (thisKey != null)
+			thisKeyMembers = thisKey.Split(',');
 		storage = (String) xe.Attribute("Storage");
-		string otherKey = ((String) xe.Attribute("OtherKey"));
-		if (otherKey != null) otherKeyMembers = otherKey.Split(',');
+		String otherKey = ((String) xe.Attribute("OtherKey"));
+		if (otherKey != null)
+			otherKeyMembers = otherKey.Split(',');
 		DeleteOnNull = (Boolean?) xe.Attribute("DeleteOnNull") ?? false;
 		DeleteRule = (String) xe.Attribute("DeleteRule");
 		IsForeignKey = (xe.Attribute("IsForeignKey") != null);
@@ -306,7 +335,9 @@ class Association { // Foreign key/association -> EntitySet/EntityRef
 	}
 }
 
-class Function { // Stored procedure -> Method
+// DBML Function element (stored procedure) > Method on DataContext
+class Function
+{
 	public List<Class> Classes { get; private set; }
 	public Data Data { get; private set; }
 	private Boolean? hasMultipleResults = null;
@@ -338,14 +369,17 @@ class Function { // Stored procedure -> Method
 	public Function(Data data, XElement xe) {
 		Data = data;
 		String hasMultiResultsElement = (String) xe.Attribute("HasMultipleResults");
-		if (hasMultiResultsElement != null) hasMultipleResults = Boolean.Parse(hasMultiResultsElement);
+		if (hasMultiResultsElement != null)
+			hasMultipleResults = Boolean.Parse(hasMultiResultsElement);
 		ID = (String) xe.Attribute("Id");
 		IsComposable = (Boolean ?) xe.Attribute("IsComposable") ?? false;
 		Name = (String) xe.Attribute("Name");
 		Method = (String) xe.Attribute("Method");
 		MemberAttributes = Util.DecodeMemberAccess((String) xe.Attribute("AccessModifier")) | Util.DecodeMemberModifier((String) xe.Attribute("Modifier"));
-		Parameters = (from p in xe.Elements(Data.NS + "Parameter") select new Parameter(this, p)).ToList();
-		Return = (from r in xe.Elements(Data.NS + "Return") select new Return(this, r)).SingleOrDefault();
+		Parameters = (from p in xe.Elements(Data.NS + "Parameter")
+			select new Parameter(this, p)).ToList();
+		Return = (from r in xe.Elements(Data.NS + "Return")
+			select new Return(this, r)).SingleOrDefault();
 		Classes = new List<Class>();
 		foreach(XElement fxe in xe.Elements(Data.NS + "ElementType")) {
 			String idRef = (String) fxe.Attribute("IdRef");
@@ -360,7 +394,9 @@ class Function { // Stored procedure -> Method
 	}
 }
 
-class Return { // Function return type -> Method return type
+// Function return type -> Method return type
+class Return
+{
 	private String typeName;
 	public String DbType { get; private set; }
 	public Function Function { get; private set; }
@@ -379,8 +415,10 @@ public enum ParameterDirection { In, Out, InOut };
 public enum OperationType { Insert, Update, Delete };
 public enum ArgumentVersion { Original, New };
 
-class Parameter { // Function parameter -> Method parameter
-	private string typeName;
+// Function parameter -> Method parameter
+class Parameter
+{
+	private String typeName;
 	public String DbType { get; private set; }
 	public Function Function { get; private set; }
 	public String Name { get; private set; }
@@ -400,8 +438,10 @@ class Parameter { // Function parameter -> Method parameter
 	}
 }
 
-class TableOperation {
-	private string functionID;
+// Functions associated with a table's CUD operations
+class TableOperation
+{
+	private String functionID;
 	private Function function;
 	public List<Argument> Arguments { get; private set; }
 	public OperationType Type { get; private set; }
@@ -425,8 +465,10 @@ class TableOperation {
 	}
 }
 
-class Argument {
-	private string parameterName;
+// Argument to a function
+class Argument
+{
+	private String parameterName;
 	private Parameter parameter;
 	public TableOperation TableOperation;
 	public Parameter Parameter {
@@ -451,7 +493,8 @@ class Argument {
 	}
 }
 
-abstract class CodeLanguage {
+abstract class CodeLanguage
+{
 	public CodeDomProvider CodeDomProvider { get; protected set; }
 	public abstract String GetAccess(MemberAttributes memberAttributes);
 	public abstract String GetAccess(TypeAttributes typeAttributes);
@@ -481,7 +524,8 @@ abstract class CodeLanguage {
 	}
 }
 
-class CSharpCodeLanguage : CodeLanguage {
+class CSharpCodeLanguage : CodeLanguage
+{
 	public CSharpCodeLanguage() {
 		CodeDomProvider = new Microsoft.CSharp.CSharpCodeProvider();
 	}
@@ -537,7 +581,8 @@ class CSharpCodeLanguage : CodeLanguage {
 	}
 }
 
-class VBCodeLanguage : CodeLanguage {
+class VBCodeLanguage : CodeLanguage
+{
 	public VBCodeLanguage() {
 		CodeDomProvider = new Microsoft.VisualBasic.VBCodeProvider();
 	}
@@ -586,13 +631,16 @@ class VBCodeLanguage : CodeLanguage {
 		return "";
 	}
 }
-public static class Util {
-	public static T ParseEnum<T>(string value, T defaultValue) where T:struct {
+
+// Methods that deserve a better home
+public static class Util
+{
+	public static T ParseEnum<T>(String value, T defaultValue) where T:struct {
 		try { return (T)Enum.Parse(typeof(T), value); }
 		catch { return defaultValue; }
 	}
 	
-	public static MemberAttributes DecodeMemberAccess(string access) {
+	public static MemberAttributes DecodeMemberAccess(String access) {
 		switch(access) {
 			case "Private": return MemberAttributes.Private;
 			case "Internal": return MemberAttributes.Assembly;
@@ -602,7 +650,7 @@ public static class Util {
 		}
 	}
 	
-	public static MemberAttributes DecodeMemberModifier(string modifier) {
+	public static MemberAttributes DecodeMemberModifier(String modifier) {
 		switch(modifier) {
 			case "Virtual": return 0;
 			case "Override": return MemberAttributes.Override;
