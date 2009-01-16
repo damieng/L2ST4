@@ -34,7 +34,7 @@ class Data
 	public String EntityNamespace { get; private set; }
 	public List<Function> Functions { get; private set; }
 	public List<FunctionClass> FunctionClasses { get; private set; }
-	public SerializationMode Serialization { get; set; }
+	public bool Serialization { get; private set; }
 	public TypeAttributes TypeAttributes { get; private set; }
 	public List<Table> Tables { get; private set; }
 	
@@ -55,7 +55,7 @@ class Data
 		ContextNamespace = (String) xe.Attribute("ContextNamespace");
 		DatabaseName = (String) xe.Attribute("Name") ?? "";
 		EntityNamespace = (String) xe.Attribute("EntityNamespace");
-		Serialization = Util.ParseEnum((String) xe.Attribute("Serialization"), SerializationMode.None);
+		Serialization = (String) xe.Attribute("Serialization") == "Unidirectional";
 		TypeAttributes = Class.DecodeAccess((String) xe.Attribute("AccessModifier")) | Class.DecodeModifier((String) xe.Attribute("Modifier"));
 		Tables = (from t in xe.Elements(NS + "Table")
 			select new Table(this, t)).ToList();
