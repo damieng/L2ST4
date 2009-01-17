@@ -11,7 +11,9 @@
 #><#@ import namespace="System.IO"
 #><#@ import namespace="System.Linq"
 #><#@ import namespace="System.Reflection"
+#><#@ import namespace="System.Text"
 #><#@ import namespace="System.Xml.Linq"
+#><#@ import namespace="Microsoft.VisualStudio.TextTemplating"
 #><#+
 // L2ST4 - LINQ to SQL templates for T4 v0.81 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
@@ -629,6 +631,56 @@ class VBCodeLanguage : CodeLanguage
 		if ((typeAttributes & TypeAttributes.Abstract) != 0) return "MustInherit ";
 		if ((typeAttributes & TypeAttributes.Sealed) != 0) return "NotInheritable ";
 		return "";
+	}
+}
+
+// Manager class records the various blocks so it can split them up
+class Manager
+{
+	private struct Block
+	{
+		public String SourceName;
+		public String Name;
+		public int Start;
+		public int Length;
+	}
+	
+	private List<Block> blocks = new List<Block>();
+	private String commonHeaderText;
+	private Block currentBlock;
+	private ITextTemplatingEngineHost host;	
+	private StringBuilder template;
+	public String OutputPath { get; set; }
+	
+	public Manager(ITextTemplatingEngineHost host, StringBuilder template, bool commonHeader) {
+		this.host = host;
+		this.template = template;
+		commonHeaderText = (commonHeader) ? template.ToString() : String.Empty;
+		OutputPath = String.Empty;
+	}
+		
+	public void StartBlock(String sourceName, String name) {
+		currentBlock = new Block { SourceName = sourceName, Name = name, Start = template.Length };
+	}
+
+	public void EndBlock() {
+		currentBlock.Length = template.Length - currentBlock.Start;
+		blocks.Add(currentBlock);
+	}
+		
+	public void Process(bool split) {
+		blocks.Reverse();
+		foreach(Block block in blocks) {
+			String absoluteFileName = Path.Combine(OutputPath, block.Name);
+			if (split) {
+				String fileOutput = commonHeaderText + template.ToString(block.Start, block.Length);
+				File.WriteAllText(absoluteFileName, fileOutput);
+				template.Remove(block.Start, block.Length);
+			} else {
+				if (File.Exists(absoluteFileName))
+					File.Delete(absoluteFileName);
+			}
+		}
 	}
 }
 

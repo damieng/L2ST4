@@ -8,6 +8,8 @@
 var options = new {
 	DbmlFileName = Host.TemplateFile.Replace(".tt",".dbml"), // Which DBML file to operate on (same filename as template)
 	SerializeDataContractSP1 = false, // Emit SP1 DataContract serializer attributes
+	FilePerEntity = false, // Put each class into a separate file
+	EntityFilePath = Path.GetDirectoryName(Host.TemplateFile) // Where to put the files	
 };
 var code = new VBCodeLanguage();
 var data = new Data(options.DbmlFileName); 
@@ -35,8 +37,10 @@ if (data.Serialization) {
 #>Imports System.Runtime.Serialization
 <#}#>
 
-<#if (!String.IsNullOrEmpty(data.ContextNamespace)) {#>
+<#var manager = new Manager(Host, GenerationEnvironment, true) { OutputPath = options.EntityFilePath };
+if (!String.IsNullOrEmpty(data.ContextNamespace)) {#>
 Namespace <#=data.ContextNamespace#>
+	
 <#}#>
 	<DatabaseAttribute(Name:="<#=data.DatabaseName#>")> _
 	Partial <#=code.Format(data.TypeAttributes)#>Class <#=data.ContextName#>
@@ -178,18 +182,20 @@ if (data.Functions.Count > 0) {#>
 		
 <#	} #>
 	End Class
-<#if ((!String.IsNullOrEmpty(data.ContextNamespace)) && (data.EntityNamespace != data.ContextNamespace)) {#>
+<#
+if (!String.IsNullOrEmpty(data.ContextNamespace)) {#>
+	
 End Namespace
 <#}
-if ((!String.IsNullOrEmpty(data.EntityNamespace)) && (data.EntityNamespace != data.ContextNamespace)) {#>
+foreach(Table table in data.Tables) {
+	foreach(TableClass class1 in table.Classes) {
+		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.vb"));	
+		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
 Namespace <#=data.EntityNamespace#>
-<#}
-foreach(Table table in data.Tables) {
-	foreach(TableClass class1 in table.Classes) {#>
-	
+		
 <#		if (data.Serialization) {
-#>		<DataContract(<#=dataContractAttributes#>)> _
+#>	<DataContract(<#=dataContractAttributes#>)> _
 <#		}
 		if (class1 == table.BaseClass) {#>
 	<Table(Name:="<#=table.Name#>")> _
@@ -258,9 +264,9 @@ foreach(Table table in data.Tables) {
 				#> CType(Nothing, EntityRef(Of <#=association.Type.Name#>))
 <#			}
 		}#>
-<#			if (class1.HasPrimaryKey) {#>
+<#		if (class1.HasPrimaryKey) {#>
 			OnCreated
-<#			}#>
+<#		}#>
 		End Sub
 		
 		#End Region
@@ -444,16 +450,25 @@ foreach(Table table in data.Tables) {
 		#End Region
 <#			}#>
 		
-<#		} #>
+<#		} 
+	}#>
 	End Class
-<#	}
+<#		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
+	
+End Namespace
+<#		}
+		manager.EndBlock();
+	}
 }
-if (data.FunctionClasses.Count > 0) {#>
+if (data.FunctionClasses.Count > 0) {
+	foreach(FunctionClass class1 in data.FunctionClasses) {
+		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.vb"));
+		if(!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
-	#Region "Auto-Generated Function Return-Types"
-<#	foreach(FunctionClass class1 in data.FunctionClasses) {#>
-
-<#		if (data.Serialization) {
+Namespace <#=data.EntityNamespace#>
+	
+<#		}
+		if (data.Serialization) {
 #>	<DataContract(<#=dataContractAttributes#>)> _
 <#		} #>
 	<#=code.Format(class1.TypeAttributes)#>Partial Class <#=class1.Name#>
@@ -488,12 +503,13 @@ if (data.FunctionClasses.Count > 0) {#>
 			End Set
 		End Property
 		
-<#		}#>
-	End Class
+<#		}
+#>	End Class
 	
-<#	}#>
-	#End Region
-
-<#}
-if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
-End Namespace<#}#>
+<#	}
+	if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
+End Namespace
+<#	}
+	manager.EndBlock();
+}
+manager.Process(options.FilePerEntity);#>

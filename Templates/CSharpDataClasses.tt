@@ -8,6 +8,8 @@
 var options = new {
 	DbmlFileName = Host.TemplateFile.Replace(".tt",".dbml"), // Which DBML file to operate on (same filename as template)
 	SerializeDataContractSP1 = false, // Emit SP1 DataContract serializer attributes
+	FilePerEntity = false, // Put each class into a separate file
+	EntityFilePath = Path.GetDirectoryName(Host.TemplateFile) // Where to put the files	
 };
 var code = new CSharpCodeLanguage();
 var data = new Data(options.DbmlFileName);
@@ -33,7 +35,8 @@ if (data.Serialization) {#>
 using System.Runtime.Serialization;
 <#}#>
 
-<#if(!String.IsNullOrEmpty(data.ContextNamespace)){#>
+<#var manager = new Manager(Host, GenerationEnvironment, true) { OutputPath = options.EntityFilePath };
+if(!String.IsNullOrEmpty(data.ContextNamespace)){#>
 namespace <#=data.ContextNamespace#>
 {
 <#}#>
@@ -175,17 +178,18 @@ if (data.Functions.Count > 0) {#>
 <#	}
 }#>
 	}
-<#if ((!String.IsNullOrEmpty(data.ContextNamespace)) && (data.EntityNamespace != data.ContextNamespace)) {
+<#if (!String.IsNullOrEmpty(data.ContextNamespace)) {
 #>}
 <#}
-if ((!String.IsNullOrEmpty(data.EntityNamespace)) && (data.EntityNamespace != data.ContextNamespace)) {#>
+foreach(Table table in data.Tables) {
+	foreach(TableClass class1 in table.Classes) {
+		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.cs"));
+		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
 namespace <#=data.EntityNamespace#>
-{<#}
-foreach(Table table in data.Tables) {
-	foreach(TableClass class1 in table.Classes) {#>
-	
-<#		if (data.Serialization && class1.IsSerializable) {
+{	
+<#		}
+		if (data.Serialization && class1.IsSerializable) {
 #>	[DataContract(<#=dataContractAttributes#>)]
 <#		}
 		if (class1 == table.BaseClass) {#>
@@ -420,12 +424,20 @@ foreach(Table table in data.Tables) {
 		#endregion
 <#		}
 #>	}
-<#	}
+<#		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 }
-if (data.FunctionClasses.Count > 0) {#>
-	
-	#region Auto-Generated Function Return-Types	
-<#	foreach(FunctionClass class1 in data.FunctionClasses) {
+<#		}
+		manager.EndBlock();
+	}
+}
+if (data.FunctionClasses.Count > 0) {
+	foreach(FunctionClass class1 in data.FunctionClasses) {
+		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.cs"));
+		if(!String.IsNullOrEmpty(data.EntityNamespace)){#>
+
+namespace <#=data.EntityNamespace#>
+{
+<#		}
 		if (data.Serialization) {
 #>	[DataContract(<#=dataContractAttributes#>)]
 <#		} #>
@@ -447,14 +459,13 @@ if (data.FunctionClasses.Count > 0) {#>
 				}
 			}
 		}
-<#		}#>
+<#		} #>
 	}
-	
-<#	}#>
-	#endregion
-	
-<#}
-if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
+<#	}
+	if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 }
-<#}#>
+<#	}
+	manager.EndBlock();
+}
+manager.Process(options.FilePerEntity);#>
 #pragma warning restore 1591

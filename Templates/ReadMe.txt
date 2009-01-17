@@ -14,6 +14,7 @@ Change Log
 			Tidy-up of comments and formatting in L2ST4.ttinclude
 			Options now specified in "var options" in each template
 			SerializeDataContractSP1 only takes effect when DBML Serialization Mode is Unidrectional!
+			Entity-per-file now implemented via the option switch (uses Manager class)
 0.80	09-Jan-2009	Licensed under the Microsoft Public License (MsPL)
 			IsComposable function support
 0.79	11-Dec-2008	Associations managing the relationship fk's now actually do <blush>
