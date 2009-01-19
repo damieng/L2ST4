@@ -1,5 +1,6 @@
 ﻿<#@ assembly name="System.Core"
 #><#@ assembly name="System.Data.Linq"
+#><#@ assembly name="EnvDTE"
 #><#@ assembly name="System.Xml"
 #><#@ assembly name="System.Xml.Linq"
 #><#@ import namespace="System"
@@ -637,18 +638,16 @@ class VBCodeLanguage : CodeLanguage
 // Manager class records the various blocks so it can split them up
 class Manager
 {
-	private struct Block
-	{
-		public String SourceName;
-		public String Name;
-		public int Start;
-		public int Length;
+	private struct Block {
+		public String SourceName, Name;
+		public int Start, Length;
 	}
 	
 	private List<Block> blocks = new List<Block>();
 	private String commonHeaderText;
 	private Block currentBlock;
 	private ITextTemplatingEngineHost host;	
+	private ManagementStrategy strategy;	
 	private StringBuilder template;
 	public String OutputPath { get; set; }
 	
@@ -657,6 +656,7 @@ class Manager
 		this.template = template;
 		commonHeaderText = (commonHeader) ? template.ToString() : String.Empty;
 		OutputPath = String.Empty;
+		strategy = ManagementStrategy.Create(host);		
 	}
 		
 	public void StartBlock(String sourceName, String name) {
@@ -671,14 +671,62 @@ class Manager
 	public void Process(bool split) {
 		blocks.Reverse();
 		foreach(Block block in blocks) {
-			String absoluteFileName = Path.Combine(OutputPath, block.Name);
+			String fileName = Path.Combine(OutputPath, block.Name);
 			if (split) {
-				String fileOutput = commonHeaderText + template.ToString(block.Start, block.Length);
-				File.WriteAllText(absoluteFileName, fileOutput);
+				String content = commonHeaderText + template.ToString(block.Start, block.Length);
+				strategy.CreateFile(fileName, content);				
 				template.Remove(block.Start, block.Length);
 			} else {
-				if (File.Exists(absoluteFileName))
-					File.Delete(absoluteFileName);
+				strategy.DeleteFile(fileName);
+			}
+		}
+	}
+}
+
+class ManagementStrategy
+{
+	internal static ManagementStrategy Create(ITextTemplatingEngineHost host) {
+		return (host is IServiceProvider) ? new VSManagementStrategy(host) : new ManagementStrategy(host); 
+	}
+
+	internal ManagementStrategy(ITextTemplatingEngineHost host) { }
+
+	internal virtual void CreateFile(String fileName, String content) {
+		File.WriteAllText(fileName, content);
+	}
+	
+	internal virtual void DeleteFile(String fileName) {
+		if (File.Exists(fileName))
+			File.Delete(fileName);
+	}
+}
+
+class VSManagementStrategy : ManagementStrategy
+{
+	private EnvDTE.ProjectItem templateProjectItem;
+	
+	internal VSManagementStrategy(ITextTemplatingEngineHost host) : base(host) {
+		IServiceProvider hostServiceProvider = (IServiceProvider)host;
+		if(hostServiceProvider == null)
+			throw new ArgumentNullException("Could not obtain hostServiceProvider");
+		
+		EnvDTE.DTE dte = (EnvDTE.DTE)hostServiceProvider.GetService(typeof(EnvDTE.DTE));
+		if(dte == null)
+			throw new ArgumentNullException("Could not obtain DTE from host");
+		
+		templateProjectItem = dte.Solution.FindProjectItem(host.TemplateFile);			
+	}
+	
+	internal override void CreateFile(String fileName, String content) {
+		base.CreateFile(fileName, content);
+		templateProjectItem.ProjectItems.AddFromFile(fileName);	
+	}
+	
+	internal override void DeleteFile(String fileName) {
+		foreach(EnvDTE.ProjectItem projectItem in templateProjectItem.ProjectItems) {
+			if (projectItem.get_FileNames(0) == fileName) {
+				projectItem.Delete();
+				return;
 			}
 		}
 	}
