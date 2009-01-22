@@ -639,7 +639,7 @@ class VBCodeLanguage : CodeLanguage
 class Manager
 {
 	private struct Block {
-		public String SourceName, Name;
+		public String Name;
 		public int Start, Length;
 	}
 	
@@ -659,8 +659,8 @@ class Manager
 		strategy = ManagementStrategy.Create(host);		
 	}
 		
-	public void StartBlock(String sourceName, String name) {
-		currentBlock = new Block { SourceName = sourceName, Name = name, Start = template.Length };
+	public void StartBlock(String name) {
+		currentBlock = new Block { Name = name, Start = template.Length };
 	}
 
 	public void StartFooter() {

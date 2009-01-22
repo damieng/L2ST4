@@ -185,7 +185,7 @@ if (data.Functions.Count > 0) {#>
 <#}
 foreach(Table table in data.Tables) {
 	foreach(TableClass class1 in table.Classes) {
-		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.cs"));
+		manager.StartBlock(Path.ChangeExtension(class1.Name,".generated.cs"));
 		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
 namespace <#=data.EntityNamespace#>
@@ -434,7 +434,7 @@ namespace <#=data.EntityNamespace#>
 }
 if (data.FunctionClasses.Count > 0) {
 	foreach(FunctionClass class1 in data.FunctionClasses) {
-		manager.StartBlock(options.DbmlFileName, Path.ChangeExtension(class1.Name,".generated.cs"));
+		manager.StartBlock(Path.ChangeExtension(class1.Name,".generated.cs"));
 		if(!String.IsNullOrEmpty(data.EntityNamespace)){#>
 
 namespace <#=data.EntityNamespace#>
