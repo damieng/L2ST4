@@ -644,17 +644,17 @@ class Manager
 	}
 	
 	private List<Block> blocks = new List<Block>();
-	private String commonHeaderText;
 	private Block currentBlock;
-	private ITextTemplatingEngineHost host;	
-	private ManagementStrategy strategy;	
+	private Block footerBlock = new Block();
+	private Block headerBlock = new Block();
+	private ITextTemplatingEngineHost host;
+	private ManagementStrategy strategy;
 	private StringBuilder template;
 	public String OutputPath { get; set; }
 	
 	public Manager(ITextTemplatingEngineHost host, StringBuilder template, bool commonHeader) {
 		this.host = host;
 		this.template = template;
-		commonHeaderText = (commonHeader) ? template.ToString() : String.Empty;
 		OutputPath = String.Empty;
 		strategy = ManagementStrategy.Create(host);		
 	}
@@ -663,18 +663,36 @@ class Manager
 		currentBlock = new Block { SourceName = sourceName, Name = name, Start = template.Length };
 	}
 
+	public void StartFooter() {
+		footerBlock.Start = template.Length;
+	}
+	
+	public void EndFooter() {
+		footerBlock.Length = template.Length - footerBlock.Start;
+	}
+	
+	public void StartHeader() {
+		headerBlock.Start = template.Length;
+	}
+	
+	public void EndHeader() {
+		headerBlock.Length = template.Length - headerBlock.Start;
+	}	
+
 	public void EndBlock() {
 		currentBlock.Length = template.Length - currentBlock.Start;
 		blocks.Add(currentBlock);
 	}
 		
 	public void Process(bool split) {
-		blocks.Reverse();
+		String header = template.ToString(headerBlock.Start, headerBlock.Length);
+		String footer = template.ToString(footerBlock.Start, footerBlock.Length);
+		blocks.Reverse();		
 		foreach(Block block in blocks) {
 			String fileName = Path.Combine(OutputPath, block.Name);
 			if (split) {
-				String content = commonHeaderText + template.ToString(block.Start, block.Length);
-				strategy.CreateFile(fileName, content);				
+				String content = header + template.ToString(block.Start, block.Length) + footer;
+				strategy.CreateFile(fileName, content);
 				template.Remove(block.Start, block.Length);
 			} else {
 				strategy.DeleteFile(fileName);
