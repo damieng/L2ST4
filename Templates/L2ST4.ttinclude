@@ -26,20 +26,22 @@ enum SerializationMode { None, Unidirectional, DataContractSP1 };
 class Data
 {
 	public XNamespace NS = "http://schemas.microsoft.com/linqtosql/dbml/2007";
-	public List<TableClass> TableClasses { get; private set; }
 	public String BaseClassName { get; private set; }
 	public String ConnectSettingsObject { get; private set; }
 	public String ConnectSettingsProperty { get; private set; }
 	public String ContextName { get; private set; }
-	public String ContextNamespace { get; private set; }
+	public String ContextNamespace { get; set; }
 	public String DatabaseName { get; private set; }
 	public String DbmlFileName { get; private set; }
-	public String EntityNamespace { get; private set; }
+	public String EntityNamespace { get; set; }
 	public List<Function> Functions { get; private set; }
 	public List<FunctionClass> FunctionClasses { get; private set; }
 	public bool Serialization { get; private set; }
+	public string SpecifiedContextNamespace { get; private set; }
+	public string SpecifiedEntityNamespace { get; private set; }
 	public TypeAttributes TypeAttributes { get; private set; }
 	public List<Table> Tables { get; private set; }
+	public List<TableClass> TableClasses { get; private set; }
 	
 	public Data(String dbmlFileName) {
 		DbmlFileName = dbmlFileName;
@@ -55,9 +57,9 @@ class Data
 		}
 		BaseClassName = (String) xe.Attribute("BaseType") ?? "DataContext";
 		ContextName = (String) xe.Attribute("Class");
-		ContextNamespace = (String) xe.Attribute("ContextNamespace");
+		ContextNamespace = SpecifiedContextNamespace = (String) xe.Attribute("ContextNamespace");
 		DatabaseName = (String) xe.Attribute("Name") ?? "";
-		EntityNamespace = (String) xe.Attribute("EntityNamespace");
+		EntityNamespace = SpecifiedEntityNamespace = (String) xe.Attribute("EntityNamespace");
 		Serialization = (String) xe.Attribute("Serialization") == "Unidirectional";
 		TypeAttributes = Class.DecodeAccess((String) xe.Attribute("AccessModifier")) | Class.DecodeModifier((String) xe.Attribute("Modifier"));
 		Tables = (from t in xe.Elements(NS + "Table")
@@ -699,6 +701,14 @@ class Manager
 			}
 		}
 	}
+
+	public string GetCustomToolNamespace(string fileName) {
+		return strategy.GetCustomToolNamespace(fileName);
+	}
+	
+	public string DefaultProjectNamespace {
+		get { return strategy.DefaultProjectNamespace; }
+	}
 }
 
 class ManagementStrategy
@@ -717,18 +727,27 @@ class ManagementStrategy
 		if (File.Exists(fileName))
 			File.Delete(fileName);
 	}
+	
+	internal virtual string DefaultProjectNamespace {
+		get { return null; }
+	}
+		
+	internal virtual string GetCustomToolNamespace(string fileName) {
+		return null;
+	}
 }
 
 class VSManagementStrategy : ManagementStrategy
 {
 	private EnvDTE.ProjectItem templateProjectItem;
+	private EnvDTE.DTE dte;
 	
 	internal VSManagementStrategy(ITextTemplatingEngineHost host) : base(host) {
 		IServiceProvider hostServiceProvider = (IServiceProvider)host;
 		if(hostServiceProvider == null)
 			throw new ArgumentNullException("Could not obtain hostServiceProvider");
 		
-		EnvDTE.DTE dte = (EnvDTE.DTE)hostServiceProvider.GetService(typeof(EnvDTE.DTE));
+		dte = (EnvDTE.DTE)hostServiceProvider.GetService(typeof(EnvDTE.DTE));
 		if(dte == null)
 			throw new ArgumentNullException("Could not obtain DTE from host");
 		
@@ -747,6 +766,14 @@ class VSManagementStrategy : ManagementStrategy
 				return;
 			}
 		}
+	}
+
+	internal override string DefaultProjectNamespace {
+		get { return templateProjectItem.ContainingProject.Properties.Item("DefaultNamespace").Value.ToString(); }
+	}
+	
+	internal override string GetCustomToolNamespace(string fileName) {
+		return dte.Solution.FindProjectItem(fileName).Properties.Item("CustomToolNamespace").Value.ToString();
 	}
 }
 

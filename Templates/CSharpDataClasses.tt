@@ -14,6 +14,8 @@ var options = new {
 var code = new CSharpCodeLanguage();
 var data = new Data(options.DbmlFileName);
 var manager = new Manager(Host, GenerationEnvironment, true) { OutputPath = options.EntityFilePath };
+data.ContextNamespace = (new string[] { manager.GetCustomToolNamespace(data.DbmlFileName), data.SpecifiedContextNamespace, manager.DefaultProjectNamespace }).FirstOrDefault(s => !String.IsNullOrEmpty(s));
+data.EntityNamespace = (new string[] { manager.GetCustomToolNamespace(data.DbmlFileName), data.SpecifiedEntityNamespace, manager.DefaultProjectNamespace }).FirstOrDefault(s => !String.IsNullOrEmpty(s));
 manager.StartHeader();
 #>#pragma warning disable 1591
 //------------------------------------------------------------------------------
