@@ -210,6 +210,9 @@ Namespace <#=data.EntityNamespace#>
 <#				}
 			}
 #>	Partial <#=code.Format(class1.TypeAttributes)#>Class <#=class1.Name#>
+<#			if (!String.IsNullOrEmpty(data.EntityBase)) {
+#>		Inherits <#=data.EntityBase#>
+<#			}#>
 		Implements INotifyPropertyChanging, INotifyPropertyChanged
 		
 		#Region "Property Change Event Handling"

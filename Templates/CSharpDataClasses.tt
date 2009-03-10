@@ -203,7 +203,7 @@ namespace <#=data.EntityNamespace#>
 	[InheritanceMapping(Code=@"<#=subclass.InheritanceCode#>", Type=typeof(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault=true<#}#>)]
 <#				}
 			}
-#>	<#=code.Format(class1.TypeAttributes)#>partial class <#=class1.Name#> : INotifyPropertyChanging, INotifyPropertyChanged
+#>	<#=code.Format(class1.TypeAttributes)#>partial class <#=class1.Name#> :<#if (!String.IsNullOrEmpty(data.EntityBase)) {#> <#=data.EntityBase#>, <#}#> INotifyPropertyChanging, INotifyPropertyChanged
 	{
 		#region Property Change Event Handling
 		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);

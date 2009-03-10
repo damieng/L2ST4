@@ -17,6 +17,7 @@ Change Log
 			Entity-per-file now implemented via the option switch (uses Manager class)
 			Entity-per-file manages the project items/subitems in Visual Studio when in that environment
 			Namespaces now taken from Visual Studio project and DBML Custom Tool Namespace as per designer
+			EntityBase now supported as the base class for entities
 0.80	09-Jan-2009	Licensed under the Microsoft Public License (MsPL)
 			IsComposable function support
 0.79	11-Dec-2008	Associations managing the relationship fk's now actually do <blush>
