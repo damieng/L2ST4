@@ -71,13 +71,16 @@
     <Parameter Name="Date" Parameter="date" Type="System.DateTime" DbType="DateTime" />
     <ElementType IdRef="ID1" />
   </Function>
-  <Function Name="dbo.DynamicContractsActiveBetween" Method="ContractsActiveAt">
+  <Function Name="dbo.DynamicContractsActiveBetween" Method="ContractsActiveAt" HasMultipleResults="true">
     <Parameter Name="FromDate" Parameter="fromdate" Type="System.DateTime" DbType="DateTime" />
     <Parameter Name="ToDate" Parameter="todate" Type="System.DateTime" DbType="DateTime" />
     <ElementType IdRef="ID1" />
     <ElementType Name="ContractsActiveAtResult1">
       <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
       <Column Name="Title" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
+    </ElementType>
+    <ElementType Name="ContractsActiveAtResult2">
+      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
       <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
       <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
       <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" />

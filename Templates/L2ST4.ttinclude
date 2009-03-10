@@ -758,11 +758,11 @@ class VSManagementStrategy : ManagementStrategy
 	
 	internal override void CreateFile(String fileName, String content) {
 		base.CreateFile(fileName, content);
-		((EventHandler)delegate { templateProjectItem.ProjectItems.AddFromFile(fileName); }).BeginInvoke(null, null, null, null);		
+		((EventHandler)delegate { templateProjectItem.ProjectItems.AddFromFile(fileName); }).BeginInvoke(null, null, null, null);
 	}
 	
 	internal override void DeleteFile(String fileName) {
-		((EventHandler)delegate { FindAndDeleteFile(fileName); }).BeginInvoke(null, null, null, null);			
+		((EventHandler)delegate { FindAndDeleteFile(fileName); }).BeginInvoke(null, null, null, null);
 	}
 	
 	private void FindAndDeleteFile(String fileName) {	

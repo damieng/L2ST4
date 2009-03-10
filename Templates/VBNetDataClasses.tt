@@ -513,10 +513,10 @@ Namespace <#=data.EntityNamespace#>
 <#		}
 #>	End Class
 	
-<#	}
-	if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
+<#		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 End Namespace
-<#	}
-	manager.EndBlock();
+<#		}
+		manager.EndBlock();
+	}	
 }
 manager.Process(options.FilePerEntity);#>

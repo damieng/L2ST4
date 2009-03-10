@@ -465,11 +465,11 @@ namespace <#=data.EntityNamespace#>
 		}
 <#		} #>
 	}
-<#	}
-	if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
+<#		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 }
-<#	}
-	manager.EndBlock();
+<#		}
+		manager.EndBlock();
+	}
 }
 manager.StartFooter();#>
 #pragma warning restore 1591<#
