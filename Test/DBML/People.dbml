@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Database Name="damieng" Class="DataClassesDataContext" Serialization="Unidirectional" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Table Name="dbo.Countries" Member="Countries">
+    <Type Name="Country" Modifier="Sealed">
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="CountryName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ISO" Type="System.String" DbType="NVarChar(3) NOT NULL" CanBeNull="false" />
+      <Column Name="TimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion NOT NULL" CanBeNull="false" IsVersion="true" />
+    </Type>
+    <DeleteFunction FunctionId="FunctionId1">
+      <Argument Parameter="countryID" Member="CountryID" />
+      <Argument Parameter="originalTimeStamp" Member="TimeStamp" Version="Original" />
+    </DeleteFunction>
+  </Table>
+  <Table Name="dbo.People" Member="Persons" AccessModifier="Internal">
+    <Type Name="Person" InheritanceCode="P" IsInheritanceDefault="true">
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="PersonID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Type" Type="System.Char" DbType="Char(1) NOT NULL" CanBeNull="false" IsDiscriminator="true" />
+      <Column Name="ManagerCountryID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ManagerPersonID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Association Name="Person_Person" Member="Manages" ThisKey="CountryID,PersonID" OtherKey="ManagerCountryID,ManagerPersonID" Type="Person" />
+      <Association Name="Person_PersonContract" Member="PersonContracts" ThisKey="CountryID,PersonID" OtherKey="CountryID,PersonID" Type="PersonContract" />
+      <Association Name="Person_PersonPhoto" Member="PersonPhotos" ThisKey="CountryID,PersonID" OtherKey="CountryID,PersonID" Type="PersonPhoto" />
+      <Association Name="Country_Person" Member="Country" ThisKey="CountryID" OtherKey="CountryID" Type="Country" IsForeignKey="true" />
+      <Association Name="Country_Person1" Member="ManagerCountry" ThisKey="ManagerCountryID" OtherKey="CountryID" Type="Country" IsForeignKey="true" />
+      <Association Name="Person_Person" Member="Manager" ThisKey="ManagerCountryID,ManagerPersonID" OtherKey="CountryID,PersonID" Type="Person" IsForeignKey="true" />
+      <Type Name="Employee" InheritanceCode="E">
+        <Column Name="AnnualSalary" Member="AnnualSalaryWage" Storage="_AnnualSalary" Type="System.Decimal" DbType="Decimal(18,0)" CanBeNull="true" />
+        <Column Name="JoinDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+        <Type Name="Manager" InheritanceCode="M" />
+      </Type>
+    </Type>
+  </Table>
+  <Table Name="dbo.PeopleContracts" Member="PersonContracts">
+    <Type Name="PersonContract" Id="ID1">
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="PersonID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Association Name="Person_PersonContract" Member="Person" ThisKey="CountryID,PersonID" OtherKey="CountryID,PersonID" Type="Person" IsForeignKey="true" />
+      <Association Name="Contract_PersonContract" Member="Contract" ThisKey="ContractID" OtherKey="ContractID" Type="Contract" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.PeoplePhotos" Member="PersonPhotos">
+    <Type Name="PersonPhoto">
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="PersonID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="PhotoID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Association Name="Person_PersonPhoto" Member="Person" ThisKey="CountryID,PersonID" OtherKey="CountryID,PersonID" Type="Person" IsForeignKey="true" />
+      <Association Name="Photo_PersonPhoto" Member="Photo" ThisKey="PhotoID" OtherKey="PhotoID" Type="Photo" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Photos" Member="Photos">
+    <Type Name="Photo">
+      <Column Name="PhotoID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="MimeType" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Binary" Type="System.Data.Linq.Binary" DbType="Image NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Contracts" Member="Contracts">
+    <Type Name="Contract">
+      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
+      <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" UpdateCheck="Never" />
+    </Type>
+  </Table>
+  <Function Name="dbo.ContractsActiveAt" Method="ContractsActiveAtSt">
+    <Parameter Name="Date" Parameter="date" Type="System.DateTime" DbType="DateTime" />
+    <ElementType IdRef="ID1" />
+  </Function>
+  <Function Name="dbo.DynamicContractsActiveBetween" Method="ContractsActiveAt">
+    <Parameter Name="FromDate" Parameter="fromdate" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="ToDate" Parameter="todate" Type="System.DateTime" DbType="DateTime" />
+    <ElementType IdRef="ID1" />
+    <ElementType Name="ContractsActiveAtResult1">
+      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
+      <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SomeMultiRecordWithOutput" Method="SomeMulti">
+    <Parameter Name="OutParam" Parameter="outparam" Type="System.DateTime" DbType="datetime" Direction="Out" />
+    <Parameter Name="InParam" Parameter="inparam" Type="System.Int32" DbType="int" />
+    <Parameter Name="InOutParam" Parameter="inoutparam" Type="System.String" DbType="NVarChar(10)" Direction="InOut" />
+    <Return Type="System.Int32" DbType="int" />
+  </Function>
+  <Function Id="FunctionId1" Name="dbo.CountriesDelete" Method="CountriesDelete">
+    <Parameter Name="CountryID" Parameter="countryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OriginalTimeStamp" Parameter="originalTimeStamp" Type="System.Data.Linq.Binary" DbType="Timestamp" />
+    <Return Type="System.Int32" />
+  </Function>
+  <Function Name="dbo.CountriesInsert" Method="CountriesInsert">
+    <Parameter Name="CountryName" Parameter="countryName" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="ISO" Parameter="iSO" Type="System.String" DbType="NVarChar(3)" />
+    <Return Type="System.Int32" />
+  </Function>
+  <Function Name="dbo.CountriesUpdate" Method="CountriesUpdate">
+    <Parameter Name="CountryID" Parameter="countryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CountryName" Parameter="countryName" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="ISO" Parameter="iSO" Type="System.String" DbType="NVarChar(3)" />
+    <Parameter Name="OriginalTimeStamp" Parameter="originalTimeStamp" Type="System.Data.Linq.Binary" DbType="Timestamp" />
+    <Return Type="System.Int32" />
+  </Function>
+</Database>
