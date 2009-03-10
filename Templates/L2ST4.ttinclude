@@ -33,6 +33,7 @@ class Data
 	public String ContextNamespace { get; set; }
 	public String DatabaseName { get; private set; }
 	public String DbmlFileName { get; private set; }
+	public String EntityBase { get; private set; }
 	public String EntityNamespace { get; set; }
 	public List<Function> Functions { get; private set; }
 	public List<FunctionClass> FunctionClasses { get; private set; }
@@ -59,6 +60,7 @@ class Data
 		ContextName = (String) xe.Attribute("Class");
 		ContextNamespace = SpecifiedContextNamespace = (String) xe.Attribute("ContextNamespace");
 		DatabaseName = (String) xe.Attribute("Name") ?? "";
+		EntityBase = (String) xe.Attribute("EntityBase");
 		EntityNamespace = SpecifiedEntityNamespace = (String) xe.Attribute("EntityNamespace");
 		Serialization = (String) xe.Attribute("Serialization") == "Unidirectional";
 		TypeAttributes = Class.DecodeAccess((String) xe.Attribute("AccessModifier")) | Class.DecodeModifier((String) xe.Attribute("Modifier"));
@@ -756,10 +758,14 @@ class VSManagementStrategy : ManagementStrategy
 	
 	internal override void CreateFile(String fileName, String content) {
 		base.CreateFile(fileName, content);
-		templateProjectItem.ProjectItems.AddFromFile(fileName);	
+		((EventHandler)delegate { templateProjectItem.ProjectItems.AddFromFile(fileName); }).BeginInvoke(null, null, null, null);		
 	}
 	
 	internal override void DeleteFile(String fileName) {
+		((EventHandler)delegate { FindAndDeleteFile(fileName); }).BeginInvoke(null, null, null, null);			
+	}
+	
+	private void FindAndDeleteFile(String fileName) {	
 		foreach(EnvDTE.ProjectItem projectItem in templateProjectItem.ProjectItems) {
 			if (projectItem.get_FileNames(0) == fileName) {
 				projectItem.Delete();
