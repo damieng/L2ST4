@@ -83,7 +83,7 @@
       <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
       <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
       <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
-      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" />
+      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" Storage="pbody" Member="Content" />
     </ElementType>
   </Function>
   <Function Name="dbo.SomeMultiRecordWithOutput" Method="SomeMulti">

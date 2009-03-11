@@ -483,7 +483,11 @@ Namespace <#=data.EntityNamespace#>
 <#		int dataMemberIndex = 1;
 		foreach(Column column in class1.Columns) {#>
 		Private <#=column.Storage#> As <#=code.Format(column.Type)#>
-		<Column(Storage:="<#=column.Storage#>", DbType:="<#=column.DbType#>")> _
+		<Column(Storage:="<#=column.Storage#>"<#
+				if (column.Name != column.Member) {#>, Name:="<#=column.Name#>"<#}
+				if (!String.IsNullOrEmpty(column.DbType)) {#>, DbType:="<#=column.DbType#>"<#}
+				if (!column.CanBeNull && !column.IsPrimaryKey) {#>, CanBeNull:=False<#}
+			#>)> _
 <#			if (data.Serialization && ((column.MemberAttributes & MemberAttributes.AccessMask) == MemberAttributes.Public)) {
 #>		<DataMember(Order:=<#=dataMemberIndex++#>)> _
 <#			}
