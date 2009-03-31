@@ -201,6 +201,7 @@ namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	[InheritanceMapping(Code=@"<#=subclass.InheritanceCode#>", Type=typeof(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault=true<#}#>)]
+	[KnownType(typeof(<#=subclass.Name#>))]
 <#				}
 			}
 #>	<#=code.Format(class1.TypeAttributes)#>partial class <#=class1.Name#> :<#if (!String.IsNullOrEmpty(data.EntityBase)) {#> <#=data.EntityBase#>, <#}#> INotifyPropertyChanging, INotifyPropertyChanged
