@@ -207,8 +207,10 @@ Namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	<InheritanceMapping(Code:="<#=subclass.InheritanceCode#>", Type:=GetType(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault:=true<#}#>)> _
+<#					if (data.Serialization && class1.IsSerializable) { #>
 	<KnownType(GetType(<#=subclass.Name#>))> _
-<#				}
+<#					}
+				}
 			}
 #>	Partial <#=code.Format(class1.TypeAttributes)#>Class <#=class1.Name#>
 <#			if (!String.IsNullOrEmpty(data.EntityBase)) {
