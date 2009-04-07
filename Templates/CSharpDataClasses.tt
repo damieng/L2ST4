@@ -201,10 +201,8 @@ namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	[InheritanceMapping(Code=@"<#=subclass.InheritanceCode#>", Type=typeof(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault=true<#}#>)]
-<#					if (data.Serialization && class1.IsSerializable) { #>
 	[KnownType(typeof(<#=subclass.Name#>))]
-<#					}
-				}
+<#				}
 			}
 #>	<#=code.Format(class1.TypeAttributes)#>partial class <#=class1.Name#> :<#if (!String.IsNullOrEmpty(data.EntityBase)) {#> <#=data.EntityBase#>, <#}#> INotifyPropertyChanging, INotifyPropertyChanged
 	{
@@ -323,8 +321,8 @@ namespace <#=data.EntityNamespace#>
 				if (association.DeleteOnNull) {#>, DeleteOnNull=true<#}
 				if (association.DeleteRule != null) {#>, DeleteRule=@"<#=association.DeleteRule #>"<#}
 		#>)]
-<#				bool serialization = association.IsSerializable &&
-					(options.SerializeDataContractSP1 || (data.Serialization && !association.ManagesKeys));
+<#				bool serialization = association.IsSerializable && data.Serialization &&
+					(options.SerializeDataContractSP1 || !association.ManagesKeys);
 				if (serialization) {
 #>		[DataMember(Order=<#=dataMemberIndex++#>, EmitDefaultValue=false)]
 <#				}
@@ -424,7 +422,7 @@ namespace <#=data.EntityNamespace#>
 <#			}#>
 		[OnDeserializing()]
 		[EditorBrowsableAttribute(EditorBrowsableState.Never)]
-		public void OnDeserializing(StreamingContext context)
+		public <#if (class1 != table.BaseClass) {#>new<#}#> void OnDeserializing(StreamingContext context)
 		{
 			Initialize();
 		}

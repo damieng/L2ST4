@@ -207,10 +207,8 @@ Namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	<InheritanceMapping(Code:="<#=subclass.InheritanceCode#>", Type:=GetType(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault:=true<#}#>)> _
-<#					if (data.Serialization && class1.IsSerializable) { #>
 	<KnownType(GetType(<#=subclass.Name#>))> _
-<#					}
-				}
+<#				}
 			}
 #>	Partial <#=code.Format(class1.TypeAttributes)#>Class <#=class1.Name#>
 <#			if (!String.IsNullOrEmpty(data.EntityBase)) {
@@ -360,8 +358,8 @@ Namespace <#=data.EntityNamespace#>
 				if (association.DeleteOnNull) {#>, DeleteOnNull:=True<#}
 				if (association.DeleteRule != null) {#>, DeleteRule:="<#=association.DeleteRule#>"<#}
 			#>)> _
-<#				bool serialization = association.IsSerializable &&
-					(options.SerializeDataContractSP1 || (data.Serialization && !association.ManagesKeys));
+<#				bool serialization = association.IsSerializable && data.Serialization &&
+					(options.SerializeDataContractSP1 || !association.ManagesKeys);
 				if (serialization) {
 #>			<DataMember(Order:=<#=dataMemberIndex++#>, EmitDefaultValue:=False)> _
 <#				}
@@ -433,10 +431,11 @@ Namespace <#=data.EntityNamespace#>
 		
 		#End Region
 		
-<#			if (data.Serialization) {#>
-		#region "Serialization"
+<#		}
+		if (data.Serialization) {#>
+		#region "Serialization"		
+<#			if (needsSerializationFlag) {#>
 		
-<#				if (needsSerializationFlag) {#>
 		Private Serializing As Boolean
 		
 		<OnSerializing(), _
@@ -450,18 +449,17 @@ Namespace <#=data.EntityNamespace#>
 		Public Sub OnSerialized(ByVal context As StreamingContext)
 			serializing = False
 		End Sub
-<#				}#>
+<#			}#>
 		
 		<OnDeserializing(), _
 		 EditorBrowsableAttribute(EditorBrowsableState.Never)> _
-		Public Sub OnDeserializing(ByVal context As StreamingContext)
+		Public <#if (class1 != table.BaseClass) {#>Shadows<#}#> Sub OnDeserializing(ByVal context As StreamingContext)
 			Initialize
 		End Sub
 		
 		#End Region
 <#		}#>
 		
-<#	}#>
 	End Class
 <#		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 	
