@@ -23,6 +23,7 @@ Change Log
 			Emit the KnownType attribute required for DataContract serialization with inheritance
 			Do not emit DataMembers when Serialization is None
 			Ensure OnDeserialization is new/Shadows when emitted in subclasses
+			Update/Delete entity with SPs ignores retcode - options.StoredProcedureConcurrency to re-enable
 0.80	09-Jan-2009	Licensed under the Microsoft Public License (MsPL)
 			IsComposable function support
 0.79	11-Dec-2008	Associations managing the relationship fk's now actually do <blush>

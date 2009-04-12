@@ -9,6 +9,7 @@ var options = new {
 	DbmlFileName = Host.TemplateFile.Replace(".tt",".dbml"), // Which DBML file to operate on (same filename as template)
 	SerializeDataContractSP1 = false, // Emit SP1 DataContract serializer attributes
 	FilePerEntity = false, // Put each class into a separate file
+	StoredProcedureConcurrency = false, // Table updates via an SP require @@rowcount to be returned to enable concurrency	
 	EntityFilePath = Path.GetDirectoryName(Host.TemplateFile) // Where to put the files	
 };
 var code = new VBCodeLanguage();
@@ -161,7 +162,7 @@ if (data.Functions.Count > 0) {#>
 			foreach(var argument in operation.Arguments.Where(a => a.Parameter.Direction != ParameterDirection.In)) {
 #>			Dim p<#=paramIdx++#> As <#=code.Format(argument.Parameter.Type)#> = obj.<#=argument.Member#>
 <#			}#>
-			If (<#=operation.Function.Method#>(<#
+			<# if (options.StoredProcedureConcurrency) {#>Dim rowCount = <#}#><#=operation.Function.Method#>(<#
 			paramIdx = 1;
 			foreach(var argument in operation.Arguments) {
 				switch(argument.Parameter.Direction) {
@@ -170,10 +171,13 @@ if (data.Functions.Count > 0) {#>
 				}
 			if (argument != operation.Arguments.Last()) {#>, <#}
 			}
-			#>) <> 1) Then
+			#>)
+<#			if (options.StoredProcedureConcurrency) {#>
+			If (rowCount <> 1) Then
 				Throw New ChangeConflictException
 			End If
-<#			paramIdx = 1;
+<#			}
+			paramIdx = 1;
 			foreach(var argument in operation.Arguments.Where(a => a.Parameter.Direction != ParameterDirection.In)) {
 #>			obj.<#=argument.Member#> = p<#=paramIdx++#>.GetValueOrDefault
 <#			}#>
