@@ -69,7 +69,7 @@ class Data
 		Functions = (from f in xe.Elements(NS + "Function")
 			select new Function(this, f)).ToList();
 	}
-	
+		
 	static internal Type GetType(String typeName, bool canBeNull) {
 		Type type = null;
 		switch(typeName) {
@@ -78,7 +78,7 @@ class Data
 			default: type = Type.GetType(typeName); break;
 		}
 		if (type == null)
-			throw new TypeLoadException("Could not instantiate type '" + typeName + "'");
+			type = new TypeStub(typeName);
 		if (type.IsValueType && canBeNull)
 			type = typeof(Nullable<>).MakeGenericType(type);
 		return type;
@@ -509,7 +509,7 @@ abstract class CodeLanguage
 	public abstract String GetModifier(TypeAttributes typeAttributes);
 	
 	public String Format(Type type) {
-		return ShortenTypeRef(CodeDomProvider.GetTypeOutput(new CodeTypeReference(type)));
+		return Format(new CodeTypeReference(type));
 	}
 	
 	public virtual String ShortenTypeRef(String typeRef) {
@@ -807,5 +807,22 @@ public static class Util
 			case "Override": return MemberAttributes.Override;
 			default: return MemberAttributes.Final;
 		}
+	}
+}
+
+class TypeStub : System.Reflection.TypeDelegator
+{
+	private String name;
+	
+	public TypeStub(String name) : base(typeof(System.Enum)) {
+		this.name = name;
+	}
+	
+	public override String Name {
+		get { return name; }
+	}
+	
+	public override String FullName {
+		get { return name; }
 	}
 }#>

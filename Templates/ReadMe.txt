@@ -5,8 +5,6 @@ Known Issues
 ------------
 1.  Tables with CRLF or " in the name break code generation.
 2.  Escaping a column or table name with [] but not the association reference causes lookup failure.
-3.  Enum's not supported as a member type for classes
-
 
 Change Log
 ----------
@@ -24,6 +22,7 @@ Change Log
 			Do not emit DataMembers when Serialization is None
 			Ensure OnDeserialization is new/Shadows when emitted in subclasses
 			Update/Delete entity with SPs ignores retcode - options.StoredProcedureConcurrency to re-enable
+			Add enumeration support.
 0.80	09-Jan-2009	Licensed under the Microsoft Public License (MsPL)
 			IsComposable function support
 0.79	11-Dec-2008	Associations managing the relationship fk's now actually do <blush>
