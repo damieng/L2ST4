@@ -1,4 +1,4 @@
-﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.81 - http://www.codeplex.com/l2st4
+﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.82 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 #><#@ template language="C#v3.5" hostspecific="True"
@@ -211,6 +211,8 @@ Namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	<InheritanceMapping(Code:="<#=subclass.InheritanceCode#>", Type:=GetType(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault:=true<#}#>)> _
+<#				}
+				if (data.Serialization && subclass.IsSerializable) {#>
 	<KnownType(GetType(<#=subclass.Name#>))> _
 <#				}
 			}
@@ -295,7 +297,7 @@ Namespace <#=data.EntityNamespace#>
 		Partial Private Sub On<#=column.Member#>Changed()
 		End Sub
 
-		Private <#=column.Storage#> As <#=code.Format(column.StorageType)#>
+		Private <#=column.Storage#> As <#=code.Format(column.StorageType)#><# if (column.IsReadOnly) {#> = CType(Nothing, <#=code.Format(column.StorageType)#>)<#}#> 
 		<Column(Storage:="<#=column.Storage#>"<#
 				if (column.Name != column.Member) {#>, Name:="<#=column.Name#>"<#}
 				if (column.AutoSync != AutoSync.Default) {#>, AutoSync:=AutoSync.<#=column.AutoSync.ToString()#><#}
@@ -306,14 +308,16 @@ Namespace <#=data.EntityNamespace#>
 				if (column.IsVersion) {#>, IsVersion:=True<#}
 				if (!column.CanBeNull && !column.IsPrimaryKey) {#>, CanBeNull:=False<#}
 				if (column.UpdateCheck != UpdateCheck.Always) {#>, UpdateCheck:=UpdateCheck.<#=column.UpdateCheck.ToString()#><#}
+				if (!String.IsNullOrEmpty(column.Expression)) {#>, Expression:="<#=column.Expression#>"<#}
 			#>)> _
 <#				if (data.Serialization && ((column.MemberAttributes & MemberAttributes.AccessMask) == MemberAttributes.Public)) {
 #>		<DataMember(Order:=<#=dataMemberIndex++#>)> _
 <#				}
-#>			<#=code.Format(column.MemberAttributes)#>Property <#=column.Member#> As <#=code.Format(column.Type)#>
+#>		<#=code.Format(column.MemberAttributes)#><# if (column.IsReadOnly) {#>ReadOnly <#}#>Property <#=column.Member#> As <#=code.Format(column.Type)#>
 			Get
 				Return <#=column.StorageValue#>
 			End Get
+<#				if (!column.IsReadOnly) {#>
 			Set
 <#				if (column.Type.IsGenericType) {#>
 				If Not <#=column.StorageValue#>.Equals(value) Then
@@ -340,6 +344,7 @@ Namespace <#=data.EntityNamespace#>
 					On<#=column.Member#>Changed
 				End If
 			End Set
+<#			}#>
 		End Property
 		
 <#			}#>

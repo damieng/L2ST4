@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Database Name="damieng" Class="DataClassesDataContext" Serialization="Unidirectional" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007" EntityBase="MyEntityBase">
+<Database Name="damieng" Class="DataClassesDataContext" Serialization="Unidirectional" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
   <Table Name="dbo.Countries" Member="Countries">
     <Type Name="Country" Modifier="Sealed">
       <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
       <Column Name="CountryName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
       <Column Name="ISO" Type="System.String" DbType="NVarChar(3) NOT NULL" CanBeNull="false" />
       <Column Name="TimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion NOT NULL" CanBeNull="false" IsVersion="true" />
+      <Column Name="Continent" Type="Continents" CanBeNull="true" UpdateCheck="Always" />
     </Type>
     <DeleteFunction FunctionId="FunctionId1">
       <Argument Parameter="countryID" Member="CountryID" />
@@ -17,7 +18,7 @@
       <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="PersonID" Type="System.Int32" DbType="Int NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="Type" Type="System.Char" DbType="Char(1) NOT NULL" CanBeNull="false" IsDiscriminator="true" />
+      <Column Name="Type" Type="System.String" DbType="Char(1) NOT NULL" CanBeNull="false" IsDiscriminator="true" />
       <Column Name="ManagerCountryID" Type="System.Int32" DbType="Int" CanBeNull="true" />
       <Column Name="ManagerPersonID" Type="System.Int32" DbType="Int" CanBeNull="true" />
       <Association Name="Person_Person" Member="Manages" ThisKey="CountryID,PersonID" OtherKey="ManagerCountryID,ManagerPersonID" Type="Person" />
@@ -53,17 +54,18 @@
   </Table>
   <Table Name="dbo.Photos" Member="Photos">
     <Type Name="Photo">
-      <Column Name="PhotoID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
-      <Column Name="MimeType" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="PhotoID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="MimeType" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" UpdateCheck="Never" IsReadOnly="true" />
       <Column Name="Binary" Type="System.Data.Linq.Binary" DbType="Image NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="Retrieved" Type="System.DateTime" DbType="Datetime" IsReadOnly="true" CanBeNull="false" Expression="GETDATE()" />
     </Type>
   </Table>
   <Table Name="dbo.Contracts" Member="Contracts">
     <Type Name="Contract">
       <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="Title" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
-      <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
-      <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="StartDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="EndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
       <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" UpdateCheck="Never" />
     </Type>
   </Table>
@@ -71,19 +73,16 @@
     <Parameter Name="Date" Parameter="date" Type="System.DateTime" DbType="DateTime" />
     <ElementType IdRef="ID1" />
   </Function>
-  <Function Name="dbo.DynamicContractsActiveBetween" Method="ContractsActiveAt" HasMultipleResults="true">
+  <Function Name="dbo.DynamicContractsActiveBetween" Method="ContractsActiveAt">
     <Parameter Name="FromDate" Parameter="fromdate" Type="System.DateTime" DbType="DateTime" />
     <Parameter Name="ToDate" Parameter="todate" Type="System.DateTime" DbType="DateTime" />
     <ElementType IdRef="ID1" />
     <ElementType Name="ContractsActiveAtResult1">
       <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
       <Column Name="Title" Type="System.String" DbType="NChar(10)" CanBeNull="true" />
-    </ElementType>
-    <ElementType Name="ContractsActiveAtResult2">
-      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
-      <Column Name="StartDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
-      <Column Name="EndDate" Type="System.DateTime" DbType="Date" CanBeNull="true" />
-      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" Storage="pbody" Member="Content" />
+      <Column Name="StartDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="EndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Body" Type="System.Xml.Linq.XElement" DbType="Xml" CanBeNull="true" />
     </ElementType>
   </Function>
   <Function Name="dbo.SomeMultiRecordWithOutput" Method="SomeMulti">

@@ -8,7 +8,12 @@ Known Issues
 
 Change Log
 ----------
-0.81	TBA		Better error for missing DBML file
+0.82			Column Expression now emitted into attribute
+			Column IsReadOnly now generates getters only when serialization is none
+			Removed old serialization enum
+			Emit KnownType class attribute only when serialization is unidirectional
+			AutoSync, IsDbGenerated and UpdateCheck attributes now default based on other attributes
+0.81			Better error for missing DBML file
 			Tidy-up of comments and formatting in L2ST4.ttinclude
 			Options now specified in "var options" in each template
 			SerializeDataContractSP1 only takes effect when DBML Serialization Mode is Unidrectional!
@@ -38,11 +43,3 @@ Change Log
 			Remove forcing of primary key on target for isforeignkey associations
 			Association lookup for ThisKey & OtherKey is now by Member (not Name) and sequence is preserved
 			Now honours access modifier and property modifiers for associations
-0.75	26-Sep-2008	Ensure Name is emitted for the Column attribute when it is different from Member
-0.74	25-Sep-2008	Use primary key of ths/other table when association doesn't specify this/other key
-0.73	25-Sep-2008	Fixed missing namespace in DBML = no namespace declaration (was "MyApplication")
-			Renamed L2ST4.tt to L2ST4.ttinclude to make installation easier
-			(If you wish to have T4 editor highlighting, rename it to TT and clear the Custom Tool property)
-0.72	23-Sep-2008	Fixed stored procedures that take no arguments
-0.71	22-Sep-2008	Fixed IsForeignKey attribute in VB.NET version - was negated
-0.70	18-Sep-2008	Implemented stored procedures for insert/update/delete

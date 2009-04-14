@@ -1,4 +1,4 @@
-﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.81 - http://www.codeplex.com/l2st4
+﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.82 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 #><#@ template language="C#v3.5" hostspecific="True"
@@ -205,8 +205,8 @@ namespace <#=data.EntityNamespace#>
 <#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	[InheritanceMapping(Code=@"<#=subclass.InheritanceCode#>", Type=typeof(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault=true<#}#>)]
-	[KnownType(typeof(<#=subclass.Name#>))]
 <#				}
+				if (data.Serialization && subclass.IsSerializable) {#>[KnownType(typeof(<#=subclass.Name#>))]<#}
 			}
 #>	<#=code.Format(class1.TypeAttributes)#>partial class <#=class1.Name#> :<#if (!String.IsNullOrEmpty(data.EntityBase)) {#> <#=data.EntityBase#>, <#}#> INotifyPropertyChanging, INotifyPropertyChanged
 	{
@@ -273,7 +273,7 @@ namespace <#=data.EntityNamespace#>
 <#			foreach(Column column in class1.Columns) {#>
 		partial void On<#=column.Member#>Changing(<#=code.Format(column.Type)#> value);
 		partial void On<#=column.Member#>Changed();
-		private <#=code.Format(column.StorageType)#> <#=column.Storage#>;
+		private <#=code.Format(column.StorageType)#> <#=column.Storage#><# if (column.IsReadOnly) {#> = default(<#=code.Format(column.StorageType)#>)<#}#>;
 		[Column(Storage=@"<#=column.Storage#>"<#
 				if (column.Name != column.Member) {#>, Name=@"<#=column.Name#>"<#}
 				if (column.AutoSync != AutoSync.Default) {#>, AutoSync=AutoSync.<#=column.AutoSync.ToString()#><#}
@@ -284,6 +284,7 @@ namespace <#=data.EntityNamespace#>
 				if (column.IsVersion) {#>, IsVersion=true<#}
 				if (!column.CanBeNull && !column.IsPrimaryKey) {#>, CanBeNull=false<#}
 				if (column.UpdateCheck != UpdateCheck.Always) {#>, UpdateCheck=UpdateCheck.<#=column.UpdateCheck.ToString()#><#}
+				if (!String.IsNullOrEmpty(column.Expression)) {#>, Expression=@"<#=column.Expression#>"<#}
 		#>)]
 <#				if (data.Serialization && ((column.MemberAttributes & MemberAttributes.AccessMask) == MemberAttributes.Public)) {
 #>		[DataMember(Order=<#=dataMemberIndex++#>)]
@@ -291,13 +292,14 @@ namespace <#=data.EntityNamespace#>
 #>		<#=code.Format(column.MemberAttributes)#><#=code.Format(column.Type)#> <#=column.Member#>
 		{
 			get { return <#=column.StorageValue#>; }
+<#				if (!column.IsReadOnly) { #>
 			set {
 				if (<#=column.StorageValue#> != value) {
-<#				if (column.ForeignKeyAssociations.Count > 0) {#>
+<#					if (column.ForeignKeyAssociations.Count > 0) {#>
 					if (<#=String.Join(" || ", column.ForeignKeyAssociations.Select(a => a.Storage + ".HasLoadedOrAssignedValue").ToArray())#>) {
 						throw new ForeignKeyReferenceAlreadyHasValueException();
 					}
-<#				}#>
+<#					}#>
 					On<#=column.Member#>Changing(value);
 					SendPropertyChanging();
 					<#=column.StorageValue#> = value;
@@ -305,6 +307,7 @@ namespace <#=data.EntityNamespace#>
 					On<#=column.Member#>Changed();
 				}
 			}
+<#				}#>
 		}
 		
 <#			}#>
