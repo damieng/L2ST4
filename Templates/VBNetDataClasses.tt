@@ -367,8 +367,8 @@ Namespace <#=data.EntityNamespace#>
 				if (association.DeleteOnNull) {#>, DeleteOnNull:=True<#}
 				if (association.DeleteRule != null) {#>, DeleteRule:="<#=association.DeleteRule#>"<#}
 			#>)> _
-<#				bool serialization = association.IsSerializable
-					(options.SerializeDataContractSP1 || (data.Serialization && !association.ManagesKeys));
+<#				bool serialization = association.IsSerializable && data.Serialization &&
+					(options.SerializeDataContractSP1 || !association.ManagesKeys);
 				if (serialization) {
 #>			<DataMember(Order:=<#=dataMemberIndex++#>, EmitDefaultValue:=False)> _
 <#				}
