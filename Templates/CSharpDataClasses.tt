@@ -328,8 +328,8 @@ namespace <#=data.EntityNamespace#>
 				if (association.DeleteOnNull) {#>, DeleteOnNull=true<#}
 				if (association.DeleteRule != null) {#>, DeleteRule=@"<#=association.DeleteRule #>"<#}
 		#>)]
-<#				bool serialization = association.IsSerializable && data.Serialization &&
-					(options.SerializeDataContractSP1 || !association.ManagesKeys);
+<#				bool serialization = association.IsSerializable &&
+					(options.SerializeDataContractSP1 || (data.Serialization && !association.ManagesKeys));
 				if (serialization) {
 #>		[DataMember(Order=<#=dataMemberIndex++#>, EmitDefaultValue=false)]
 <#				}
