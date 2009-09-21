@@ -16,7 +16,7 @@
 #><#@ import namespace="System.Xml.Linq"
 #><#@ import namespace="Microsoft.VisualStudio.TextTemplating"
 #><#+
-// L2ST4 - LINQ to SQL templates for T4 v0.82 - http://www.codeplex.com/l2st4
+// L2ST4 - LINQ to SQL templates for T4 v0.83 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
@@ -73,6 +73,7 @@ class Data
 		switch(typeName) {
 			case "System.Xml.Linq.XElement": type = typeof(System.Xml.Linq.XElement); break;
 			case "System.Data.Linq.Binary": type = typeof(System.Data.Linq.Binary); break;
+			case "object": type = typeof(Object); break;
 			default: type = Type.GetType(typeName); break;
 		}
 		if (type == null)
@@ -367,7 +368,7 @@ class Association
 	}
 }
 
-// DBML Function element (stored procedure) > Method on DataContext
+// DBML Function element (stored procedure or function) > Method on DataContext
 class Function
 {
 	public List<Class> Classes { get; private set; }
@@ -378,23 +379,52 @@ class Function
 	}
 	public String ID { get; private set; }
 	public Boolean IsComposable { get; private set; }
+	public Boolean IsComposableQuery {
+		get { return IsComposable && Classes.Count > 0; }
+	}	
 	public MemberAttributes MemberAttributes { get; private set; }
 	public String Method { get; private set; }
 	public String Name { get; private set; }
 	public List<Parameter> Parameters { get; private set; }
 	public Return Return { get; private set; }
+	private CodeTypeReference resultType;
+	public CodeTypeReference ResultType {
+		get {
+			if (resultType == null)
+			{
+				if (Classes.Count == 0)
+					resultType = new CodeTypeReference((Return == null) ? typeof(Object) : Return.Type);
+				else
+					if (HasMultipleResults)
+						resultType = new CodeTypeReference(typeof(IMultipleResults));
+					else
+						resultType = new CodeTypeReference(Classes[0].QualifiedName);
+			}
+			return resultType;			
+		}
+	}
+
+	private CodeTypeReference returnType;
 	public CodeTypeReference ReturnType {
 		get {
-			if (Return != null)
-				return new CodeTypeReference(Return.Type);
-			else
-				if (HasMultipleResults)
-					return new CodeTypeReference(typeof(IMultipleResults));
-				else {
-					CodeTypeReference typeRef = new CodeTypeReference(typeof(ISingleResult<>));
-					typeRef.TypeArguments.Add(new CodeTypeReference(Classes[0].QualifiedName));
-					return typeRef;
-				}
+			if (returnType == null)
+			{
+				returnType = ResultType;
+				if (Classes.Count > 0)
+				{
+					if (IsComposable) // Functions are IQueryable<T>
+					{
+						returnType = new CodeTypeReference(typeof(IQueryable<>));
+						returnType.TypeArguments.Add(ResultType);
+					} else {
+						if (!HasMultipleResults) {
+							returnType = new CodeTypeReference(typeof(ISingleResult<>));
+							returnType.TypeArguments.Add(ResultType);
+						}
+					}	
+				}			
+			}
+			return returnType;
 		}
 	}
 	
@@ -426,14 +456,14 @@ class Function
 	}
 }
 
-// Function return type -> Method return type
+// Stored procedure scalar return type -> Method return type
 class Return
 {
 	private String typeName;
 	public String DbType { get; private set; }
 	public Function Function { get; private set; }
 	public Type Type { 
-		get { return Data.GetType(typeName, false); }
+		get { return Data.GetType(typeName, true); }
 	}
 	
 	public Return(Function function, XElement xe) {

@@ -55,7 +55,7 @@
   <Table Name="dbo.Photos" Member="Photos">
     <Type Name="Photo">
       <Column Name="PhotoID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="MimeType" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" UpdateCheck="Never" IsReadOnly="true" />
+      <Column Name="MimeType" Type="System.String" DbType="NVarChar(50) NOT NULL" IsReadOnly="true" UpdateCheck="Never" CanBeNull="false" />
       <Column Name="Binary" Type="System.Data.Linq.Binary" DbType="Image NOT NULL" CanBeNull="false" UpdateCheck="Never" />
       <Column Name="Retrieved" Type="System.DateTime" DbType="Datetime" IsReadOnly="true" CanBeNull="false" Expression="GETDATE()" />
     </Type>
@@ -107,5 +107,19 @@
     <Parameter Name="ISO" Parameter="iSO" Type="System.String" DbType="NVarChar(3)" />
     <Parameter Name="OriginalTimeStamp" Parameter="originalTimeStamp" Type="System.Data.Linq.Binary" DbType="Timestamp" />
     <Return Type="System.Int32" />
+  </Function>
+  <Function Name="dbo.DateTimeMaxValue" Method="DateTimeMaxValue" IsComposable="true">
+    <Return Type="System.DateTime" />
+  </Function>
+  <Function Name="dbo.Headline" Method="SetHeadline" IsComposable="true">
+    <Parameter Name="Headline" Type="System.String" DbType="NVarChar(128)" />
+    <Return Type="object" />
+  </Function>
+  <Function Name="dbo.udfContractSearch" Method="ContractSearch" IsComposable="true">
+    <Parameter Name="keywords" Type="System.String" DbType="NVarChar(4000)" />
+    <ElementType Name="ContractSearchResult">
+      <Column Name="ContractID" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
+      <Column Name="Rank" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
   </Function>
 </Database>

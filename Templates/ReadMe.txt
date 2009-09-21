@@ -8,6 +8,9 @@ Known Issues
 
 Change Log
 ----------
+0.83			Corrected return types for IsComposable functions to be IQueryable or nullable scalars
+			IsComposable functions that are IQueryable now correctly call CreateMethodCallQuery 
+			Functions and Stored Procs with no return type now correctly type to System.Object
 0.82			Column Expression now emitted into attribute
 			Column IsReadOnly now generates getters only when serialization is none
 			Removed old serialization enum

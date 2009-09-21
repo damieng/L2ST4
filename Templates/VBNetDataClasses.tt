@@ -1,4 +1,4 @@
-﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.82 - http://www.codeplex.com/l2st4
+﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.83 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 #><#@ template language="C#v3.5" hostspecific="True"
@@ -135,16 +135,20 @@ if (data.Functions.Count > 0) {#>
 		#>) As <#if (function.Return != null && function.Return.DbType != null) {#><Parameter(DbType:="<#=function.Return.DbType#>")> <#}#><#=code.Format(function.ReturnType)#>
 <#		foreach(Parameter outParameter in function.Parameters.Where(p => p.Direction == ParameterDirection.Out)) {#>
 			<#=outParameter.Name#> = CType(Nothing, <#=code.Format(outParameter.Type)#>)
-<#		}#>
+<#		}
+		if (function.IsComposableQuery) { #>
+			Return CreateMethodCallQuery(Of <#=code.Format(function.ResultType)#>)(Me, CType(MethodInfo.GetCurrentMethod,MethodInfo)<#=String.Join("", function.Parameters.Select(p => ", " + p.Name).ToArray())#>)
+<#		} else { #>
 			Dim result As IExecuteResult = ExecuteMethodCall(Me, CType(MethodInfo.GetCurrentMethod,MethodInfo)<#=String.Join("", function.Parameters.Select(p => ", [" + p.Name + "]").ToArray())#>)
-<#		int paramIdx = 0;
-		foreach(Parameter parameter in function.Parameters) {
-			if (parameter.Direction != ParameterDirection.In) {#>
+<#			int paramIdx = 0;
+			foreach(Parameter parameter in function.Parameters) {
+				if (parameter.Direction != ParameterDirection.In) {#>
 			<#=parameter.Name#> = CType(result.GetParameterValue(<#=paramIdx#>), <#=code.Format(parameter.Type)#>)
-<#			}
-			paramIdx++;
-		}
+<#				}
+				paramIdx++;
+			}
 #>			Return CType(result.ReturnValue,<#=code.Format(function.ReturnType)#>)
+<#		}#>
 		End Function
 		
 <#	}#>
