@@ -697,15 +697,15 @@ class VBCodeLanguage : CodeLanguage
 // Manager class records the various blocks so it can split them up
 class Manager
 {
-	private struct Block {
+	private class Block {
 		public String Name;
 		public int Start, Length;
 	}
 	
 	private List<Block> blocks = new List<Block>();
+	private Block footerBlock = new Block() { Name = "Footer" };
+	private Block headerBlock = new Block() { Name = "Header" };
 	private Block currentBlock;
-	private Block footerBlock = new Block();
-	private Block headerBlock = new Block();
 	private ITextTemplatingEngineHost host;
 	private ManagementStrategy strategy;
 	private StringBuilder template;
@@ -715,35 +715,45 @@ class Manager
 		this.host = host;
 		this.template = template;
 		OutputPath = String.Empty;
-		strategy = ManagementStrategy.Create(host);		
+		strategy = ManagementStrategy.Create(host);
 	}
 		
-	public void StartBlock(String name) {
-		currentBlock = new Block { Name = name, Start = template.Length };
-	}
-
-	public void StartFooter() {
-		footerBlock.Start = template.Length;
+	public void StartNamedBlock(String name) {
+		CurrentBlock = new Block { Name = name };
 	}
 	
-	public void EndFooter() {
-		footerBlock.Length = template.Length - footerBlock.Start;
+	public void StartFooterBlock() {
+		CurrentBlock = footerBlock;
 	}
-	
-	public void StartHeader() {
-		headerBlock.Start = template.Length;
-	}
-	
-	public void EndHeader() {
-		headerBlock.Length = template.Length - headerBlock.Start;
+		
+	public void StartHeaderBlock() {
+		CurrentBlock = headerBlock;
 	}	
-
+	
 	public void EndBlock() {
-		currentBlock.Length = template.Length - currentBlock.Start;
-		blocks.Add(currentBlock);
+		if (CurrentBlock == null)
+			throw new InvalidOperationException("Trying to end a block when no block has been started");
+		CurrentBlock.Length = template.Length - CurrentBlock.Start;
+		if (CurrentBlock != headerBlock && CurrentBlock != footerBlock)
+			blocks.Add(CurrentBlock);
+		currentBlock = null;
 	}
-		
+	
+	private Block CurrentBlock {
+		get { return currentBlock; }
+		set {
+			if (value != null)
+				value.Start = template.Length;
+			if (CurrentBlock != null)
+				throw new InvalidOperationException(String.Format("Missing EndBlock between start of block '{0}' and start of block '{1}'.", CurrentBlock.Name, value.Name));
+			currentBlock = value;
+		}
+	}
+				
 	public void Process(bool split) {
+		if (CurrentBlock != null)
+			throw new InvalidOperationException(String.Format("Missing EndBlock between start of block '{0}' and Process operation.", CurrentBlock.Name));
+	
 		String header = template.ToString(headerBlock.Start, headerBlock.Length);
 		String footer = template.ToString(footerBlock.Start, footerBlock.Length);
 		blocks.Reverse();		
