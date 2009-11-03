@@ -10,6 +10,7 @@ Change Log
 ----------
 0.84			Blocks are now defined with StartHeaderBlock, StartFooterBlock and StartNamedBlock and ended with just EndBlock
 			The file splitting class now enforces that blocks do not overlap by throwing if they do instead of mangling output
+			Removed the output comment header timestamp to prevent phantom file changes when content is the same
 0.83			Corrected return types for IsComposable functions to be IQueryable or nullable scalars
 			IsComposable functions that are IQueryable now correctly call CreateMethodCallQuery 
 			Functions and Stored Procs with no return type now correctly type to System.Object
