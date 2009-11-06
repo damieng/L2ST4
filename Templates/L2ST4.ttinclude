@@ -16,7 +16,7 @@
 #><#@ import namespace="System.Xml.Linq"
 #><#@ import namespace="Microsoft.VisualStudio.TextTemplating"
 #><#+
-// L2ST4 - LINQ to SQL templates for T4 v0.83 - http://www.codeplex.com/l2st4
+// L2ST4 - LINQ to SQL templates for T4 v0.84 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
@@ -695,156 +695,164 @@ class VBCodeLanguage : CodeLanguage
 }
 
 // Manager class records the various blocks so it can split them up
-class Manager
-{
+class Manager {
 	private class Block {
 		public String Name;
 		public int Start, Length;
 	}
-	
-	private List<Block> blocks = new List<Block>();
-	private Block footerBlock = new Block() { Name = "Footer" };
-	private Block headerBlock = new Block() { Name = "Header" };
+
 	private Block currentBlock;
+	private List<Block> files = new List<Block>();
+	private Block footer = new Block();
+	private Block header = new Block();
 	private ITextTemplatingEngineHost host;
-	private ManagementStrategy strategy;
 	private StringBuilder template;
-	public String OutputPath { get; set; }
-	
-	public Manager(ITextTemplatingEngineHost host, StringBuilder template, bool commonHeader) {
-		this.host = host;
-		this.template = template;
-		OutputPath = String.Empty;
-		strategy = ManagementStrategy.Create(host);
+	protected List<String> generatedFileNames = new List<String>();
+
+	public static Manager Create(ITextTemplatingEngineHost host, StringBuilder template) {
+		return (host is IServiceProvider) ? new VSManager(host, template) : new Manager(host, template);
 	}
-		
-	public void StartNamedBlock(String name) {
+
+	public void StartNewFile(String name) {
+		if (name == null)
+			throw new ArgumentNullException("name");
 		CurrentBlock = new Block { Name = name };
 	}
-	
-	public void StartFooterBlock() {
-		CurrentBlock = footerBlock;
+
+	public void StartFooter() {
+		CurrentBlock = footer;
 	}
-		
-	public void StartHeaderBlock() {
-		CurrentBlock = headerBlock;
-	}	
-	
+
+	public void StartHeader() {
+		CurrentBlock = header;
+	}
+
 	public void EndBlock() {
 		if (CurrentBlock == null)
-			throw new InvalidOperationException("Trying to end a block when no block has been started");
+			return;
 		CurrentBlock.Length = template.Length - CurrentBlock.Start;
-		if (CurrentBlock != headerBlock && CurrentBlock != footerBlock)
-			blocks.Add(CurrentBlock);
+		if (CurrentBlock != header && CurrentBlock != footer)
+			files.Add(CurrentBlock);
 		currentBlock = null;
 	}
-	
+
+	public virtual void Process(bool split) {
+		if (split) {
+			EndBlock();
+			String headerText = template.ToString(header.Start, header.Length);
+			String footerText = template.ToString(footer.Start, footer.Length);
+			String outputPath = Path.GetDirectoryName(host.TemplateFile);
+			files.Reverse();
+			foreach(Block block in files) {
+				String fileName = Path.Combine(outputPath, block.Name);
+				String content = headerText + template.ToString(block.Start, block.Length) + footerText;
+				generatedFileNames.Add(fileName);
+				CreateFile(fileName, content);
+				template.Remove(block.Start, block.Length);
+			}
+		}
+	}
+
+	protected virtual void CreateFile(String fileName, String content) {
+		if (IsFileContentDifferent(fileName, content))
+			File.WriteAllText(fileName, content);
+	}
+
+	public virtual String GetCustomToolNamespace(String fileName) {
+		return null;
+	}
+
+	public virtual String DefaultProjectNamespace {
+		get { return null; }
+	}
+
+	protected bool IsFileContentDifferent(String fileName, String newContent) {
+		return !(File.Exists(fileName) && File.ReadAllText(fileName) == newContent);
+	}
+
+	private Manager(ITextTemplatingEngineHost host, StringBuilder template) {
+		this.host = host;
+		this.template = template;
+	}
+
 	private Block CurrentBlock {
 		get { return currentBlock; }
 		set {
+			if (CurrentBlock != null)
+				EndBlock();
 			if (value != null)
 				value.Start = template.Length;
-			if (CurrentBlock != null)
-				throw new InvalidOperationException(String.Format("Missing EndBlock between start of block '{0}' and start of block '{1}'.", CurrentBlock.Name, value.Name));
 			currentBlock = value;
 		}
 	}
-				
-	public void Process(bool split) {
-		if (CurrentBlock != null)
-			throw new InvalidOperationException(String.Format("Missing EndBlock between start of block '{0}' and Process operation.", CurrentBlock.Name));
-	
-		String header = template.ToString(headerBlock.Start, headerBlock.Length);
-		String footer = template.ToString(footerBlock.Start, footerBlock.Length);
-		blocks.Reverse();		
-		foreach(Block block in blocks) {
-			String fileName = Path.Combine(OutputPath, block.Name);
-			if (split) {
-				String content = header + template.ToString(block.Start, block.Length) + footer;
-				strategy.CreateFile(fileName, content);
-				template.Remove(block.Start, block.Length);
-			} else {
-				strategy.DeleteFile(fileName);
+
+	private class VSManager: Manager {
+		private EnvDTE.ProjectItem templateProjectItem;
+		private EnvDTE.DTE dte;
+		private Action<String> checkOutAction;
+		private Action<IEnumerable<String>> projectSyncAction;
+
+		public override String DefaultProjectNamespace {
+			get {
+				return templateProjectItem.ContainingProject.Properties.Item("DefaultNamespace").Value.ToString();
 			}
 		}
-	}
 
-	public string GetCustomToolNamespace(string fileName) {
-		return strategy.GetCustomToolNamespace(fileName);
-	}
-	
-	public string DefaultProjectNamespace {
-		get { return strategy.DefaultProjectNamespace; }
-	}
-}
+		public override String GetCustomToolNamespace(string fileName) {
+			return dte.Solution.FindProjectItem(fileName).Properties.Item("CustomToolNamespace").Value.ToString();
+		}
 
-class ManagementStrategy
-{
-	internal static ManagementStrategy Create(ITextTemplatingEngineHost host) {
-		return (host is IServiceProvider) ? new VSManagementStrategy(host) : new ManagementStrategy(host); 
-	}
-
-	internal ManagementStrategy(ITextTemplatingEngineHost host) { }
-
-	internal virtual void CreateFile(String fileName, String content) {
-		File.WriteAllText(fileName, content);
-	}
-	
-	internal virtual void DeleteFile(String fileName) {
-		if (File.Exists(fileName))
-			File.Delete(fileName);
-	}
-	
-	internal virtual string DefaultProjectNamespace {
-		get { return null; }
-	}
-		
-	internal virtual string GetCustomToolNamespace(string fileName) {
-		return null;
-	}
-}
-
-class VSManagementStrategy : ManagementStrategy
-{
-	private EnvDTE.ProjectItem templateProjectItem;
-	private EnvDTE.DTE dte;
-	
-	internal VSManagementStrategy(ITextTemplatingEngineHost host) : base(host) {
-		IServiceProvider hostServiceProvider = (IServiceProvider)host;
-		if(hostServiceProvider == null)
-			throw new ArgumentNullException("Could not obtain hostServiceProvider");
-		
-		dte = (EnvDTE.DTE)hostServiceProvider.GetService(typeof(EnvDTE.DTE));
-		if(dte == null)
-			throw new ArgumentNullException("Could not obtain DTE from host");
-		
-		templateProjectItem = dte.Solution.FindProjectItem(host.TemplateFile);			
-	}
-	
-	internal override void CreateFile(String fileName, String content) {
-		base.CreateFile(fileName, content);
-		((EventHandler)delegate { templateProjectItem.ProjectItems.AddFromFile(fileName); }).BeginInvoke(null, null, null, null);
-	}
-	
-	internal override void DeleteFile(String fileName) {
-		((EventHandler)delegate { FindAndDeleteFile(fileName); }).BeginInvoke(null, null, null, null);
-	}
-	
-	private void FindAndDeleteFile(String fileName) {	
-		foreach(EnvDTE.ProjectItem projectItem in templateProjectItem.ProjectItems) {
-			if (projectItem.get_FileNames(0) == fileName) {
-				projectItem.Delete();
+		public override void Process(bool split) {
+			if (templateProjectItem.ProjectItems == null)
 				return;
+			base.Process(split);
+			projectSyncAction.EndInvoke(projectSyncAction.BeginInvoke(generatedFileNames, null, null));
+		}
+
+		protected override void CreateFile(String fileName, String content) {
+			if (IsFileContentDifferent(fileName, content)) {
+				CheckoutFileIfRequired(fileName);
+				File.WriteAllText(fileName, content);
 			}
 		}
-	}
 
-	internal override string DefaultProjectNamespace {
-		get { return templateProjectItem.ContainingProject.Properties.Item("DefaultNamespace").Value.ToString(); }
-	}
-	
-	internal override string GetCustomToolNamespace(string fileName) {
-		return dte.Solution.FindProjectItem(fileName).Properties.Item("CustomToolNamespace").Value.ToString();
+		internal VSManager(ITextTemplatingEngineHost host, StringBuilder template)
+			: base(host, template) {
+			var hostServiceProvider = (IServiceProvider) host;
+			if (hostServiceProvider == null)
+				throw new ArgumentNullException("Could not obtain IServiceProvider");
+			dte = (EnvDTE.DTE) hostServiceProvider.GetService(typeof(EnvDTE.DTE));
+			if (dte == null)
+				throw new ArgumentNullException("Could not obtain DTE from host");
+			templateProjectItem = dte.Solution.FindProjectItem(host.TemplateFile);
+			checkOutAction = (String fileName) => dte.SourceControl.CheckOutItem(fileName);
+			projectSyncAction = (IEnumerable<String> keepFileNames) => ProjectSync(templateProjectItem, keepFileNames);
+		}
+
+		private static void ProjectSync(EnvDTE.ProjectItem templateProjectItem, IEnumerable<String> keepFileNames) {
+			var keepFileNameSet = new HashSet<String>(keepFileNames);
+			var projectFiles = new Dictionary<String, EnvDTE.ProjectItem>();
+			var originalFilePrefix = Path.GetFileNameWithoutExtension(templateProjectItem.get_FileNames(0)) + ".";
+            
+			foreach(EnvDTE.ProjectItem projectItem in templateProjectItem.ProjectItems)
+				projectFiles.Add(projectItem.get_FileNames(0), projectItem);
+
+			// Remove unused items from the project
+			foreach(var pair in projectFiles)
+				if (!keepFileNames.Contains(pair.Key) && !(Path.GetFileNameWithoutExtension(pair.Key) + ".").StartsWith(originalFilePrefix))
+					pair.Value.Delete();
+
+			// Add missing files to the project
+			foreach(String fileName in keepFileNameSet)
+				if (!projectFiles.ContainsKey(fileName))
+					templateProjectItem.ProjectItems.AddFromFile(fileName);
+		}
+
+		private void CheckoutFileIfRequired(String fileName) {
+			var sc = dte.SourceControl;
+			if (sc != null && sc.IsItemUnderSCC(fileName) && !sc.IsItemCheckedOut(fileName))
+				checkOutAction.EndInvoke(checkOutAction.BeginInvoke(fileName, null, null));
+		}
 	}
 }
 
@@ -883,11 +891,6 @@ class TypeStub : System.Reflection.TypeDelegator
 		this.name = name;
 	}
 	
-	public override String Name {
-		get { return name; }
-	}
-	
-	public override String FullName {
-		get { return name; }
-	}
+	public override String Name { get { return name; } }	
+	public override String FullName { get { return name; } }
 }#>

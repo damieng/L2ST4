@@ -8,7 +8,12 @@ Known Issues
 
 Change Log
 ----------
-0.84			Blocks are now defined with StartHeaderBlock, StartFooterBlock and StartNamedBlock and ended with just EndBlock
+0.85			Manager class aligned with Entity Framework T4 template VS2010 one
+			Now checks out files from TFS if they need editing
+			Faster and more reliable integration with TFS for add/delete operations
+			Now cleans up all files under the project item in VS
+			No longer deletes files from disk when run outside of VS		
+0.84			StartHeader, StartFooter and StartBlock are now all ended with the generic EndBlock method
 			The file splitting class now enforces that blocks do not overlap by throwing if they do instead of mangling output
 			Removed the output comment header timestamp to prevent phantom file changes when content is the same
 0.83			Corrected return types for IsComposable functions to be IQueryable or nullable scalars
