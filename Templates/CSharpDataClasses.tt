@@ -1,4 +1,4 @@
-﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.85 - http://www.codeplex.com/l2st4
+﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.86 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 #><#@ template language="C#v3.5" hostspecific="True"
@@ -96,7 +96,7 @@ namespace <#=data.ContextNamespace#>
 		
 		#region Tables
 <#	foreach(Table table in data.Tables) {
-#>		<#=code.GetAccess(table.BaseClass.TypeAttributes)#>Table<<#=table.BaseClass.QualifiedName#>> <#=table.Member#>
+#>		<#=code.GetAccess(table.TypeAttributes)#>Table<<#=table.BaseClass.QualifiedName#>> <#=table.Member#>
 		{
 			get { return GetTable<<#=table.BaseClass.QualifiedName#>>(); }
 		}
@@ -123,7 +123,7 @@ if (data.Functions.Count > 0) {#>
 		<#=code.Format(function.MemberAttributes)#><#=code.Format(function.ReturnType)#> <#=function.Method#>(<#
 		foreach(Parameter parameter in function.Parameters) {#>
 
-				[Parameter(Name=@"<#=parameter.DbName#>", DbType=@"<#=parameter.DbType#>")] <#=code.Format(parameter.Direction)#><#=code.Format(parameter.Type)#> <#=parameter.Name#><#
+				[Parameter(<#if (parameter.DbName != parameter.Name) {#>Name=@"<#=parameter.DbName#>", <#}#>DbType=@"<#=parameter.DbType#>")] <#=code.Format(parameter.Direction)#><#=code.Format(parameter.Type)#> <#=parameter.Name#><#
 			if (parameter != function.Parameters.Last()) {#>,<# }
 		}
 		#>) {

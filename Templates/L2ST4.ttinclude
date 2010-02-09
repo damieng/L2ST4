@@ -16,7 +16,7 @@
 #><#@ import namespace="System.Xml.Linq"
 #><#@ import namespace="Microsoft.VisualStudio.TextTemplating"
 #><#+
-// L2ST4 - LINQ to SQL templates for T4 v0.84 - http://www.codeplex.com/l2st4
+// L2ST4 - LINQ to SQL templates for T4 v0.86 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 
@@ -101,6 +101,7 @@ class Table
 	}
 	public String Name { get; set; }
 	public List<TableOperation> Operations { get; private set; }
+	public TypeAttributes TypeAttributes { get; private set; }
 
 	public Table(Data data, XElement xe) {
 		Data = data;
@@ -109,6 +110,7 @@ class Table
 		Data.TableClasses.AddRange(from c in xe.Elements(Data.NS + "Type")
 			select new TableClass(this, c));
 		Operations = new List<TableOperation>();
+		TypeAttributes = Class.DecodeAccess((String) xe.Attribute("AccessModifier")) | Class.DecodeModifier((String) xe.Attribute("Modifier"));		
 		foreach(OperationType operationType in Enum.GetValues(typeof(OperationType)))
 			Operations.AddRange((from o in xe.Elements(Data.NS + operationType.ToString() + "Function")
 				select new TableOperation(this, o)).ToList());
@@ -180,7 +182,7 @@ class TableClass : Class
 		get { return Columns.Where(c => c.IsPrimaryKey).ToList(); }
 	}
 	public MemberAttributes PropertyChangeAccess {
-		get { return ((TypeAttributes & TypeAttributes.Sealed) != 0) ? MemberAttributes.Private | MemberAttributes.Final : MemberAttributes.Public; }
+		get { return ((TypeAttributes & TypeAttributes.Sealed) != 0) ? MemberAttributes.Private | MemberAttributes.Final : MemberAttributes.Family; }
 	}
 	public IEnumerable<TableClass> Subclasses {
 		get { return Table.Data.TableClasses.Where(c => c.SuperClass == this); }
@@ -441,7 +443,7 @@ class Function
 		Parameters = (from p in xe.Elements(Data.NS + "Parameter")
 			select new Parameter(this, p)).ToList();
 		Return = (from r in xe.Elements(Data.NS + "Return")
-			select new Return(this, r)).SingleOrDefault();
+			select new Return(this, r, IsComposable)).SingleOrDefault();
 		Classes = new List<Class>();
 		foreach(XElement fxe in xe.Elements(Data.NS + "ElementType")) {
 			String idRef = (String) fxe.Attribute("IdRef");
@@ -462,14 +464,16 @@ class Return
 	private String typeName;
 	public String DbType { get; private set; }
 	public Function Function { get; private set; }
+	public Boolean Nullable { get; private set; }
 	public Type Type { 
-		get { return Data.GetType(typeName, true); }
+		get { return Data.GetType(typeName, Nullable); }
 	}
 	
-	public Return(Function function, XElement xe) {
+	public Return(Function function, XElement xe, Boolean nullable) {
 		Function = function;
 		DbType = (String) xe.Attribute("DbType");
 		typeName = (String) xe.Attribute("Type");
+		Nullable = nullable;
 	}
 }
 

@@ -1,4 +1,4 @@
-﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.85 - http://www.codeplex.com/l2st4
+﻿<# // L2ST4 - LINQ to SQL templates for T4 v0.86 - http://www.codeplex.com/l2st4
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // This source code is made available under the terms of the Microsoft Public License (MS-PL)
 #><#@ template language="C#v3.5" hostspecific="True"
@@ -86,7 +86,7 @@ Namespace <#=data.ContextNamespace#>
 			OnCreated
 		End Sub
 		
-		Public Sub New(ByVal connection As String, ByVal mappingsource As MappingSource)
+		Public Sub New(ByVal connection As String, ByVal mappingSource As MappingSource)
 			MyBase.New(connection, mappingSource)
 			OnCreated
 		End Sub
@@ -102,7 +102,7 @@ Namespace <#=data.ContextNamespace#>
 		#Region "Tables"
 		
 <#foreach(Table table in data.Tables) {#>
-		<#=code.GetAccess(table.BaseClass.TypeAttributes)#>ReadOnly Property <#=table.Member#> As Table(Of <#=table.BaseClass.QualifiedName#>)
+		<#=code.GetAccess(table.TypeAttributes)#>ReadOnly Property <#=table.Member#> As Table(Of <#=table.BaseClass.QualifiedName#>)
 			Get
 				Return GetTable(Of <#=table.BaseClass.QualifiedName#>)
 			End Get
@@ -127,7 +127,7 @@ if (data.Functions.Count > 0) {#>
 		}#>
 		<#=code.Format(function.MemberAttributes)#>Function <#=function.Method#>(<#
 		foreach(Parameter parameter in function.Parameters) {
-		#><Parameter(Name:="<#=parameter.DbName#>", DbType:="<#=parameter.DbType#>")> <#=code.Format(parameter.Direction)#>[<#=parameter.Name#>] As <#=code.Format(parameter.Type)#><#
+		#><Parameter(<#if (parameter.DbName != parameter.Name) {#>Name:="<#=parameter.DbName#>", <#}#>DbType:="<#=parameter.DbType#>")> <#=code.Format(parameter.Direction)#>[<#=parameter.Name#>] As <#=code.Format(parameter.Type)#><#
 			if (parameter != function.Parameters.Last()) {#>, <#}
 		}
 		#>) As <#if (function.Return != null && function.Return.DbType != null) {#><Parameter(DbType:="<#=function.Return.DbType#>")> <#}#><#=code.Format(function.ReturnType)#>
@@ -447,7 +447,7 @@ Namespace <#=data.EntityNamespace#>
 		#region "Serialization"		
 <#			if (needsSerializationFlag) {#>
 		
-		Private Serializing As Boolean
+		Private serializing As Boolean
 		
 		<OnSerializing(), _
 		 EditorBrowsableAttribute(EditorBrowsableState.Never)> _

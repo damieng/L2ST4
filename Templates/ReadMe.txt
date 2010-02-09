@@ -8,6 +8,12 @@ Known Issues
 
 Change Log
 ----------
+0.86			Not supports property modifiers for datacontext Table<T> properties set on table element
+			Corrected case in VB.NET template for serialization property and mappingsource constructor parameter
+			Stored procedures that return scalars are only nullable if they are composable
+			SendPropertyChanging/Changed methods are now protected not public when not on a sealed type
+
+			Only emit function parameter attribute names if they are different to the actual parameter name
 0.85			Manager class aligned with Entity Framework T4 template VS2010 one
 			Now checks out files from TFS if they need editing
 			Faster and more reliable integration with TFS for add/delete operations
