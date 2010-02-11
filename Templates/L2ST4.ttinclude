@@ -35,7 +35,7 @@ class Data
 	public String EntityNamespace { get; set; }
 	public List<Function> Functions { get; private set; }
 	public List<FunctionClass> FunctionClasses { get; private set; }
-	public Bolean Serialization { get; private set; }
+	public Boolean Serialization { get; private set; }
 	public String SpecifiedContextNamespace { get; private set; }
 	public String SpecifiedEntityNamespace { get; private set; }
 	public TypeAttributes TypeAttributes { get; private set; }
@@ -322,9 +322,7 @@ class Association
 	public Boolean IsUnique {
 		get { return (!IsMany && !IsForeignKey); } 
 	}
-	public Boolean ManagesKeys {
-		get { return !(IsMany || (OtherSide == null) || !IsForeignKey); } 
-	}
+	public Boolean ManagesKeys { get { return IsForeignKey; } }
 	public String Member { get; private set; }
 	public MemberAttributes MemberAttributes { get; private set; }
 	public String Name { get; private set; }

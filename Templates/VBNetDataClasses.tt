@@ -59,7 +59,7 @@ Namespace <#=data.ContextNamespace#>
 <#	var tableOperations = new List<TableOperation>();
 	foreach(var table in data.Tables)
 		tableOperations.AddRange(table.Operations);
-	foreach(Table table in data.Tables)
+	foreach(var table in data.Tables)
 		foreach(OperationType operationType in Enum.GetValues(typeof(OperationType)))
 			if (!tableOperations.Any(o => (o.Table == table) && (o.Type == operationType))) {#>
 		Private Partial Sub <#=operationType#><#=table.BaseClass.Name#>(instance As <#=table.BaseClass.QualifiedName#> )
@@ -101,7 +101,7 @@ Namespace <#=data.ContextNamespace#>
 		
 		#Region "Tables"
 		
-<#foreach(Table table in data.Tables) {#>
+<#foreach(var table in data.Tables) {#>
 		<#=code.GetAccess(table.TypeAttributes)#>ReadOnly Property <#=table.Member#> As Table(Of <#=table.BaseClass.QualifiedName#>)
 			Get
 				Return GetTable(Of <#=table.BaseClass.QualifiedName#>)
@@ -115,23 +115,23 @@ if (data.Functions.Count > 0) {#>
 		
 		#Region "Functions"
 		
-<#	foreach(Function function in data.Functions) {
+<#	foreach(var function in data.Functions) {
 #>
 		<FunctionAttribute(Name:="<#=function.Name#>"<#
 		if (function.IsComposable) {#>, IsComposable:=True<#}
 		#>)> _
 <#		if (function.HasMultipleResults) {
-			foreach(Class class1 in function.Classes) {#>
+			foreach(var class1 in function.Classes) {#>
 		<ResultType(GetType(<#=class1.QualifiedName#>))> _
 <#			}
 		}#>
 		<#=code.Format(function.MemberAttributes)#>Function <#=function.Method#>(<#
-		foreach(Parameter parameter in function.Parameters) {
+		foreach(var parameter in function.Parameters) {
 		#><Parameter(<#if (parameter.DbName != parameter.Name) {#>Name:="<#=parameter.DbName#>", <#}#>DbType:="<#=parameter.DbType#>")> <#=code.Format(parameter.Direction)#>[<#=parameter.Name#>] As <#=code.Format(parameter.Type)#><#
 			if (parameter != function.Parameters.Last()) {#>, <#}
 		}
 		#>) As <#if (function.Return != null && function.Return.DbType != null) {#><Parameter(DbType:="<#=function.Return.DbType#>")> <#}#><#=code.Format(function.ReturnType)#>
-<#		foreach(Parameter outParameter in function.Parameters.Where(p => p.Direction == ParameterDirection.Out)) {#>
+<#		foreach(var outParameter in function.Parameters.Where(p => p.Direction == ParameterDirection.Out)) {#>
 			<#=outParameter.Name#> = CType(Nothing, <#=code.Format(outParameter.Type)#>)
 <#		}
 		if (function.IsComposableQuery) { #>
@@ -139,7 +139,7 @@ if (data.Functions.Count > 0) {#>
 <#		} else { #>
 			Dim result As IExecuteResult = ExecuteMethodCall(Me, CType(MethodInfo.GetCurrentMethod,MethodInfo)<#=String.Join("", function.Parameters.Select(p => ", [" + p.Name + "]").ToArray())#>)
 <#			int paramIdx = 0;
-			foreach(Parameter parameter in function.Parameters) {
+			foreach(var parameter in function.Parameters) {
 				if (parameter.Direction != ParameterDirection.In) {#>
 			<#=parameter.Name#> = CType(result.GetParameterValue(<#=paramIdx#>), <#=code.Format(parameter.Type)#>)
 <#				}
@@ -197,8 +197,8 @@ if (!String.IsNullOrEmpty(data.ContextNamespace)) {#>
 	
 End Namespace
 <#}
-foreach(Table table in data.Tables) {
-	foreach(TableClass class1 in table.Classes) {
+foreach(var table in data.Tables) {
+	foreach(var class1 in table.Classes) {
 		manager.StartNewFile(Path.ChangeExtension(class1.Name,".generated.vb"));	
 		if (!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
@@ -210,7 +210,7 @@ Namespace <#=data.EntityNamespace#>
 <#		}
 		if (class1 == table.BaseClass) {#>
 	<Table(Name:="<#=table.Name#>")> _
-<#			foreach(TableClass subclass in data.TableClasses.Where(c => c.Table == table)) {
+<#			foreach(var subclass in data.TableClasses.Where(c => c.Table == table)) {
 				if (!String.IsNullOrEmpty(subclass.InheritanceCode)) {#>
 	<InheritanceMapping(Code:="<#=subclass.InheritanceCode#>", Type:=GetType(<#=subclass.Name#>)<# if (subclass.IsInheritanceDefault) {#>, IsDefault:=true<#}#>)> _
 <#				}
@@ -273,7 +273,7 @@ Namespace <#=data.EntityNamespace#>
 		
 		Private Sub Initialize()
 <#		}
-		foreach(Association association in class1.Associations) {
+		foreach(var association in class1.Associations) {
 #>			<#=association.Storage#> =<#
 			if (association.IsMany) {
 				#> New EntitySet(Of <#=association.Type.Name#>)(AddressOf attach_<#=association.Member#>, AddressOf detach_<#=association.Member#>)
@@ -292,7 +292,7 @@ Namespace <#=data.EntityNamespace#>
 		
 		#Region "Column Mappings"
 		
-<#			foreach(Column column in class1.Columns) {#>
+<#			foreach(var column in class1.Columns) {#>
 		Partial Private Sub On<#=column.Member#>Changing(value As <#=code.Format(column.Type)#>)
 		End Sub
 
@@ -357,7 +357,7 @@ Namespace <#=data.EntityNamespace#>
 		if (class1.Associations.Count > 0) {
 #>
 		#Region "Associations"
-<#			foreach(Association association in class1.Associations) {#>
+<#			foreach(var association in class1.Associations) {#>
 		
 		Private <#=association.Storage#> As Entity<#= (association.IsMany) ? "Set" : "Ref" #>(Of <#=association.Type.Name#>)
 		<Association(Name:="<#=association.Name#>"<#
@@ -395,10 +395,12 @@ Namespace <#=data.EntityNamespace#>
 					End If
 <#					}
 #>					<#=association.Storage#>.Entity = value
-<#					if (association.OtherSide != null) {#>
+<#					if (association.OtherSide != null || association.ManagesKeys) {#>
 					If (value IsNot Nothing) Then
+<#						if (association.OtherSide != null) {#>					
 						value.<#=association.OtherSide.Member#><#if (!association.OtherSide.IsMany) {#> = Me<#} else {#>.Add(Me)<#}#> 
-<#						if (association.ManagesKeys) {
+<#						}
+						if (association.ManagesKeys) {
 							for(int keyIdx=0;keyIdx<association.ThisKey.Count();keyIdx++) {#>
 							<#=association.ThisKey[keyIdx].Storage#> = value.<#=association.OtherKey[keyIdx].Member#>
 <#							}#>
@@ -480,7 +482,7 @@ End Namespace
 	}
 }
 if (data.FunctionClasses.Count > 0) {
-	foreach(FunctionClass class1 in data.FunctionClasses) {
+	foreach(var class1 in data.FunctionClasses) {
 		manager.StartNewFile(Path.ChangeExtension(class1.Name,".generated.vb"));
 		if(!String.IsNullOrEmpty(data.EntityNamespace)) {#>
 
@@ -493,7 +495,7 @@ Namespace <#=data.EntityNamespace#>
 	<#=code.Format(class1.TypeAttributes)#>Partial Class <#=class1.Name#>
 		
 <#		int dataMemberIndex = 1;
-		foreach(Column column in class1.Columns) {#>
+		foreach(var column in class1.Columns) {#>
 		Private <#=column.Storage#> As <#=code.Format(column.Type)#>
 		<Column(Storage:="<#=column.Storage#>"<#
 				if (column.Name != column.Member) {#>, Name:="<#=column.Name#>"<#}
