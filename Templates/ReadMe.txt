@@ -12,8 +12,8 @@ Change Log
 			Corrected case in VB.NET template for serialization property and mappingsource constructor parameter
 			Stored procedures that return scalars are only nullable if they are composable
 			SendPropertyChanging/Changed methods are now protected not public when not on a sealed type
-
 			Only emit function parameter attribute names if they are different to the actual parameter name
+			Minor formatting on C# template KnownType attribute, line spacing and bool->Boolean/string->String in .ttinclude
 0.85			Manager class aligned with Entity Framework T4 template VS2010 one
 			Now checks out files from TFS if they need editing
 			Faster and more reliable integration with TFS for add/delete operations
