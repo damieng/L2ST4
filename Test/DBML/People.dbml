@@ -6,7 +6,7 @@
       <Column Name="CountryName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
       <Column Name="ISO" Type="System.String" DbType="NVarChar(3) NOT NULL" CanBeNull="false" />
       <Column Name="TimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion NOT NULL" CanBeNull="false" IsVersion="true" />
-      <Column Name="Continent" Type="Continents" CanBeNull="true" UpdateCheck="Always" />
+      <Column Name="Continent" Type="System.String" CanBeNull="true" UpdateCheck="Always" />
     </Type>
     <DeleteFunction FunctionId="FunctionId1">
       <Argument Parameter="countryID" Member="CountryID" />
