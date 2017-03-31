@@ -14,7 +14,7 @@ Provide drop-in replacements that serve as a starting point for customized code 
 ## Getting started
 Follow these simple steps:
 
-1. Download either the [url:last stable snapshot|http://l2st4.codeplex.com/Release/ProjectReleases.aspx?ReleaseId=31180#DownloadId=78123] or the [url:latest version in source control|http://l2st4.codeplex.com/SourceControl/ListDownloadableCommits.aspx#DownloadLatest] and extract the files
+1. Download the [latest release](https://github.com/damieng/L2ST4/releases) and extract the files
 2. Drag the L2ST4.ttinclude and either CSharpDataClasses.tt or VBNetDataClasses.tt files to your project
 3. Rename the .tt file to match your DBML file (retaining .tt instead of .dbml)
 4. Turn off the existing .generated file beneath the DBML (set it's Build Action property to None)
