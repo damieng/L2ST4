@@ -26,3 +26,5 @@ Templates are a work-in-progress and you should ensure the generated code is sui
 
 - Reserved keyword checking not implemented
 - String escaping not implemented (e.g. " or CRLF in table/column names)
+- Tables with CRLF or " in the name break code generation
+- Escaping a column or table name with [] but not the association reference causes lookup failure
