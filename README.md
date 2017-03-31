@@ -1,7 +1,7 @@
 # LINQ to SQL templates for T4
 
 ## Summary
-Templates replicating the functionality of the SQLMetal and the LINQ to SQL classes designer code-generators for both C# and VB.Net requiring just Visual Studio 2008.
+T4 templates with the functionality of SQLMetal/LINQ to SQL classes designer code-generators for C# & VB.Net.
 
 ## Goal
 Provide drop-in replacements that serve as a starting point for customized code generation. The templates also add:
