@@ -19,7 +19,7 @@ Follow these simple steps:
 3. Rename the .tt file to match your DBML file (retaining .tt instead of .dbml)
 4. Turn off the existing .generated file beneath the DBML (set it's Build Action property to None)
 
-Remember to use *Transform All Templates* or *Run Custom Tool* on the .tt file to run the template when the DBML has changed (it's not automatic).
+Remember to use *Transform All Templates* or *Run Custom Tool* on the .tt file to run the template when the DBML has changed (it's not automatic).  If your .tt file does not have the *Custom Tool* property defined then set it to `TextTemplatingFileGenerator`.
 
 ## Limitations
 Templates are a work-in-progress and you should ensure the generated code is suitable for your application. Limitations include:
