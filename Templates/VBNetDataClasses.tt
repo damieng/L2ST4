@@ -70,30 +70,35 @@ Namespace <#=data.ContextNamespace#>
 		
 		#Region "Construction"
 <#if (data.ConnectSettingsObject != null) {#>
-		Public Sub New()
+		Public Sub New(ByVal Optional logger as IO.TextWriter = Nothing)
 			MyBase.New(Global.<#=data.ConnectSettingsObject#>.Default.<#=data.ConnectSettingsProperty#>, mappingSource)
 			OnCreated
+			Log = logger
 		End Sub
 <#}#>
 		
-		Public Sub New(ByVal connection As String)
+		Public Sub New(ByVal connection As String, ByVal Optional logger as IO.TextWriter = Nothing)
 			MyBase.New(connection, mappingSource)
 			OnCreated
+			Log = logger
 		End Sub
 		
-		Public Sub New(ByVal connection As System.Data.IDbConnection)
+		Public Sub New(ByVal connection As System.Data.IDbConnection, ByVal Optional logger as IO.TextWriter = Nothing)
 			MyBase.New(connection, mappingSource)
 			OnCreated
+			Log = logger
 		End Sub
 		
-		Public Sub New(ByVal connection As String, ByVal mappingSource As MappingSource)
+		Public Sub New(ByVal connection As String, ByVal mappingSource As MappingSource, ByVal Optional logger as IO.TextWriter = Nothing)
 			MyBase.New(connection, mappingSource)
 			OnCreated
+			Log = logger
 		End Sub
 		
-		Public Sub New(ByVal connection As System.Data.IDbConnection, ByVal mappingSource As MappingSource)
+		Public Sub New(ByVal connection As System.Data.IDbConnection, ByVal mappingSource As MappingSource, ByVal Optional logger as IO.TextWriter = Nothing)
 			MyBase.New(connection, mappingSource)
 			OnCreated
+			Log = logger
 		End Sub
 		
 		#End Region
