@@ -215,7 +215,7 @@ class FunctionClass : Class
 // DBML type Column > Properties on a class
 class Column
 {
-	private String member, typeName, storage;
+	private String member, csharpMemberName, vbMemberName, typeName, storage;
 
 	private AutoSync autoSync;
 	public AutoSync AutoSync {
@@ -260,6 +260,14 @@ class Column
 		get { return member + ((member == Class.Name) ? "1" : ""); }
 		set { member = value; }
 	}
+	public String CSharpMemberName {
+		get { return csharpMemberName + ((csharpMemberName == Class.Name) ? "1" : ""); }
+		set { csharpMemberName = value; }
+	}
+	public String VbMemberName {
+		get { return vbMemberName + ((vbMemberName == Class.Name) ? "1" : ""); }
+		set { vbMemberName = value; }
+	}
 	public MemberAttributes MemberAttributes { get; private set; }
 	public String Name { get; private set; }
 	public String Storage { 
@@ -285,6 +293,8 @@ class Column
 		Class = class1;
 		Name = (String) xe.Attribute("Name") ?? "";
 		Member = (String) xe.Attribute("Member") ?? Name;
+		CSharpMemberName = Util.RenameCSharpKeywords(Member);
+		VbMemberName = Util.RenameVBKeywords(Member);
 		typeName = xe.Attribute("Type").Value;
 		CanBeNull = (Boolean?) xe.Attribute("CanBeNull") ?? false;
 		DbType = (String) xe.Attribute("DbType") ?? "";
@@ -891,6 +901,24 @@ public static class Util
 			default: return MemberAttributes.Final;
 		}
 	}
+
+	public static string RenameCSharpKeywords(string valueString)
+    {
+        string[] reserved = new[] { "abstract", "break", "char", "continue", "do", "event", "finally", "foreach", "in", "is", "new", "out", "protected", "return", "sizeof", "struct", "TRUE", "ulong", "using", "while", "as", "byte", "checked", "decimal", "double", "explicit", "fixed", "goto", "int", "lock", "null", "override", "public", "sbyte", "stackalloc", "switch", "try", "unchecked", "virtual", "base", "case", "class", "default", "else", "extern", "float", "if", "interface", "long", "object", "params", "readonly", "sealed", "static", "this", "typeof", "unsafe", "void", "bool", "catch", "const", "delegate", "enum", "FALSE", "for", "implicit", "internal", "namespace", "operator", "private", "ref", "short", "string", "throw", "uint", "ushort", "volatile" };
+        if (reserved.Contains(valueString))
+            return "@" + valueString;
+
+        return valueString;
+    }
+
+	public static string RenameVBKeywords(string valueString)
+    {
+        string[] reserved = new[] { "#Const", "#Else", "#ElseIf", "#End", "#If", "AddHandler", "AddressOf", "Alias", "And", "AndAlso", "As", "Boolean", "ByRef", "Byte", "ByVal", "Call", "Case", "Catch", "CBool", "CByte", "CChar", "CDate", "CDbl", "CDec", "Char", "CInt", "Class", "Class Statement", "CLng", "CObj", "Const", "Continue", "CSByte", "CShort", "CSng", "CStr", "CType", "CUInt", "CULng", "CUShort", "Date", "Decimal", "Declare", "Default", "Delegate", "Dim", "DirectCast", "Do", "Double", "Each", "Else", "ElseIf", "End <keyword>", "End Statement", "EndIf", "Enum", "Erase", "Error", "Event", "Exit", "Finally", "For (in For…Next)", "For Each…Next", "Friend", "Function", "Get", "GetType", "GetXMLNamespace", "Global", "GoSub", "GoTo", "Handles", "If", "If()", "Implements", "Implements Statement", "Imports (.NET Namespace and Type)", "Imports (XML Namespace)", "In", "In (Generic Modifier)", "Inherits", "Integer", "Interface", "Is", "IsNot", "Let", "Lib", "Like", "Long", "Loop", "Me", "Mod", "Module", "Module Statement", "MustInherit", "MustOverride", "MyBase", "MyClass", "NameOf", "Namespace", "Narrowing", "New Constraint", "New Operator", "Next", "Next (in Resume)", "Not", "Nothing", "NotInheritable", "NotOverridable", "Object", "Of", "On", "Operator", "Option", "Optional", "Or", "OrElse", "Out (Generic Modifier)", "Overloads", "Overridable", "Overrides", "ParamArray", "Partial", "Private", "Property", "Protected", "Public", "RaiseEvent", "ReadOnly", "ReDim", "REM", "RemoveHandler", "Resume", "Return", "SByte", "Select", "Set", "Shadows", "Shared", "Short", "Single", "Static", "Step", "Stop", "String", "Structure Constraint", "Structure Statement", "Sub", "SyncLock", "Then", "Throw", "To", "Try", "TryCast", "TypeOf…Is", "UInteger", "ULong", "UShort", "Using", "Variant", "Wend", "When", "While", "Widening", "With", "WithEvents", "WriteOnly", "Xor", "FALSE", "TRUE" };
+        if (reserved.Contains(valueString))
+            return "[" + valueString + "]";
+
+        return valueString;
+    }
 }
 
 class TypeStub : System.Reflection.TypeDelegator

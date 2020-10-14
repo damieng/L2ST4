@@ -293,7 +293,7 @@ namespace <#=data.EntityNamespace#>
 <#				if (data.Serialization && ((column.MemberAttributes & MemberAttributes.AccessMask) == MemberAttributes.Public)) {
 #>		[DataMember(Order=<#=dataMemberIndex++#>)]
 <#				}
-#>		<#=code.Format(column.MemberAttributes)#><#=code.Format(column.Type)#> <#=column.Member#>
+#>		<#=code.Format(column.MemberAttributes)#><#=code.Format(column.Type)#> <#=column.CSharpMemberName#>
 		{
 			get { return <#=column.StorageValue#>; }
 <#				if (!column.IsReadOnly) { #>

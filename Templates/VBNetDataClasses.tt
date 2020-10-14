@@ -315,7 +315,7 @@ Namespace <#=data.EntityNamespace#>
 <#				if (data.Serialization && ((column.MemberAttributes & MemberAttributes.AccessMask) == MemberAttributes.Public)) {
 #>		<DataMember(Order:=<#=dataMemberIndex++#>)> _
 <#				}
-#>		<#=code.Format(column.MemberAttributes)#><# if (column.IsReadOnly) {#>ReadOnly <#}#>Property <#=column.Member#> As <#=code.Format(column.Type)#>
+#>		<#=code.Format(column.MemberAttributes)#><# if (column.IsReadOnly) {#>ReadOnly <#}#>Property <#=column.VbMemberName#> As <#=code.Format(column.Type)#>
 			Get
 				Return <#=column.StorageValue#>
 			End Get
